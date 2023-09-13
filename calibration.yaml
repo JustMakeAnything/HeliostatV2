@@ -1,0 +1,210 @@
+globals:
+
+  # The calibration booleans are set to true for the
+  # limits to calibrate. This only controls the next
+  # step. The first step has to be triggered by the calibration trigger
+  - id: calibration_down
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+  - id: calibration_up
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+  - id: calibration_left
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+  - id: calibration_right
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+
+  - id: upper_limit
+    type: int
+    restore_value: yes
+
+  - id: right_limit
+    type: int
+    restore_value: yes
+
+button:
+  - platform: template
+    name: "Trigger calibration"
+    id: triggercalibration
+    on_press:
+      - globals.set:
+          id: calibration_down
+          value: 'true'
+      - globals.set:
+          id: calibration_up
+          value: 'true'
+      - globals.set:
+          id: calibration_left
+          value: 'true'
+      - globals.set:
+          id: calibration_right
+          value: 'true'
+      - lambda: |-
+          // Go to first target (down)
+          id(stepper_el).set_target(-600*${Microsteps});
+          id(stepper_az).set_target(-1100*${Microsteps});
+
+  - platform: template
+    name: "Trigger origin"
+    id: triggerorigin
+
+    on_press:
+      - globals.set:
+          id: calibration_down
+          value: 'true'
+      - globals.set:
+          id: calibration_left
+          value: 'true'
+      - lambda: |-
+          // Find origin
+          id(stepper_el).set_target(-600*${Microsteps});
+          id(stepper_az).set_target(-1100*${Microsteps});
+
+# Endstop buttons
+binary_sensor:
+  - platform: gpio
+    pin: 
+      number: GPIO16
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 250ms
+    name: "StopDown"
+    id: "stopdown"
+    # The stopdown button was pressed.
+    on_press:
+      then:
+        - stepper.set_target:
+            id: stepper_el
+            target: !lambda |-
+              if(id(calibration_down) == true ){
+                // report_position sets the endstop to -4*microsteps 
+                id(stepper_el).report_position(-${Microsteps}*4);
+                ESP_LOGI("calibration", "lower limit reset");
+                if(id(calibration_up) == true ){
+                  // Go up
+                  return 700*${Microsteps};
+                }
+              } else {
+                ESP_LOGI("calibration", "Down endstop triggered without calibration");
+              }
+              return 0;
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_down)= false;
+            if(id(calibration_left) == true ){
+              // Go left (Simultaneously to up if up is requested)
+              id(stepper_az).set_target(-1100*${Microsteps});
+            }
+
+  - platform: gpio
+    pin: 
+      number: GPIO4
+      inverted: true
+      mode:
+        input: true
+        pullup: true    
+    filters:
+      - delayed_off: 250ms
+    name: "StopUP"
+    id: "stopup"
+    # The stopup button was pressed.
+    on_press:
+      then:
+        - stepper.set_target:
+            id: stepper_el
+            target: !lambda |-
+              int position = id(stepper_el).current_position;
+              if(id(calibration_up) == true ){
+                id(upper_limit) = position-${Microsteps}*4;
+                ESP_LOGI("calibration", "upper limit set to: %d",id(upper_limit));
+                // Back to lower position 
+                return 100*${Microsteps};
+              } else {
+                ESP_LOGI("calibration", "Up endstop triggered without calibration");
+                return position;
+              }
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_up)= false;
+            if(id(calibration_left) == true ){
+              // Go left
+              id(stepper_az).set_target(-1100*${Microsteps});
+            }
+
+  - platform: gpio
+    pin: 
+      number: GPIO17
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 500ms
+    name: "StopLeft"
+    id: "stopleft"
+    # The stopleft button was pressed.
+    on_press:
+      then:
+        - stepper.set_target:
+            id: stepper_az
+            target: !lambda |-
+              if(id(calibration_left) == true ){
+                // report_position sets the endstop to -8*microsteps 
+                id(stepper_az).report_position(-${Microsteps}*8);
+                ESP_LOGI("calibration", "left limit reset");
+                if(id(calibration_right) == true ){
+                  // Go right
+                  return 1100*${Microsteps};
+                }
+              } else {
+                ESP_LOGI("calibration", "Left endstop triggered without calibration");
+              }
+              return 0;
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_left) = false;
+
+  - platform: gpio
+    pin: 
+      number: GPIO18
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 250ms
+    name: "StopRight"
+    id: "stopright"
+    on_press:
+      then:
+        - stepper.set_target:
+            id: stepper_az
+            target: !lambda |-
+              int position = id(stepper_az).current_position;
+              if(id(calibration_right) == true ){
+                id(right_limit) = position-${Microsteps}*6;
+                ESP_LOGI("calibration", "Right limit set to: %d",id(right_limit));
+              } else {
+                ESP_LOGI("calibration", "Right endstop triggered without calibration");
+              }
+              return position-${Microsteps}*6;
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_right) = false;

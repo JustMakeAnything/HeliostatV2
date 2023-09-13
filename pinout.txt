@@ -1,0 +1,105 @@
+See also:
+https://randomnerdtutorials.com/esp32-pinout-reference-gpios/
+
+ADC0: Light sensor(s) multiplexed via digital pins:
+* 4 pins
+
+Benötigt:
+Stepper Motor:
+* step
+* direction
+* enable
+
+Status LED
+* 1-5
+
+Light sensor multiplex
+* Sensor 1-4
+
+=> Use ESP32 instead
+
+Enough Analog in 
+
+
+            3V3         #######     GND
+            EN          #     #     IO 23
+Analog0     IO 36       #     #     IO 22
+Analog3     IO 39       #     #     IO 1    
+Analog6     IO 34       #     #     IO 3    
+Analog7     IO 35       #     #     IO 21
+            IO 32       #     #     GND
+            IO 33       #     #     IO 19
+            IO 25       #     #     IO 18   
+            IO 26       #     #     IO 5   
+            IO 27       #     #     IO 17   
+            IO 14       #     #     IO 16
+            IO 12       #     #     IO 4
+            GND         #     #     IO 0
+            IO 13       #     #     IO 2
+            IO 9        #     #     IO 15
+            IO 10       #     #     IO 8
+            IO 11       #     #     IO 7
+            5V          #######     IO 6
+
+
+3.3V            3V3         #######     GND
+                EN          #     #     IO 23   (LED)
+LDR Adc0        IO 36       #     #     IO 22   SPI
+LDR Adc3        IO 39       #     #     IO 1    TX
+LDR Adc6        IO 34       #     #     IO 3    RX
+LDR Adc7        IO 35       #     #     IO 21   SPI
+Sleep(El)       IO 32       #     #     GND
+El Step         IO 33       #     #     IO 19   (Interaction Button wifi connect)
+El Dir          IO 25       #     #     IO 18   Azimut right endstop
+Sleep(Az)       IO 26       #     #     IO 5    X PWM on boot
+Az Step         IO 27       #     #     IO 17   Azimut left endstop
+PWM on boot   X IO 14       #     #     IO 16   Motor Elevation down endstop
+Az Dir          IO 12       #     #     IO 4    Motor Elevation up endstop 
+Ground*/-+      GND         #     #     IO 0    X Pulled up
+PWM on boot   X IO 13       #     #     IO 2    X OnboardLED
+              X IO 9        #     #     IO 15   X Strapping pin
+              X IO 10       #     #     IO 8    X 
+              X IO 11       #     #     IO 7    X
+                5V          #######     IO 6    X
+
+GPIO	Input	Output	Notes
+0	pulled up	OK	outputs PWM signal at boot
+1	TX Pin	    OK	debug output at boot
+2	OK	        OK	connected to on-board LED
+3	OK	        RX  Pin	HIGH at boot
+4	OK	        OK	 
+5	OK	        OK	outputs PWM signal at boot
+6	X	        X	connected to the integrated SPI flash
+7	X	        X	connected to the integrated SPI flash
+8	X	        X	connected to the integrated SPI flash connected to the integrated SPI flash
+9	X	        X	connected to the integrated SPI flash
+10	X	        X	connected to the integrated SPI flash
+11	X	        X	connected to the integrated SPI flash
+12	OK	        OK	 
+13	OK	        OK	
+14	OK	        OK	outputs PWM signal at boot
+15	OK	        OK	outputs PWM signal at boot Strapping pin 
+16	OK	        OK	 
+17	OK	        OK	 
+18	OK	        OK	 
+19	OK	        OK	 
+20	OK	        OK	 
+21	OK	        OK	 
+22	OK	        OK	 
+23	OK	        OK	 
+24	OK	        OK	 
+25	OK	        OK	 
+26	OK	        OK	 
+27	OK	        OK	 
+28	OK	        OK	 
+29	OK	        OK	 
+30	OK	        OK	 
+31	OK	        OK	 
+32	OK	        OK	 
+33	OK	        OK	 
+34	OK	 	 
+35	OK	 	 
+36	OK	 	        input only
+37	OK	 	        input only
+38	OK	 	        input only
+39	OK	 	        input only

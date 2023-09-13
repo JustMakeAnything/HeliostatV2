@@ -1,0 +1,21 @@
+
+* Hardware
+#+ Create connection board
++ connect LDR
+#+ connect Stepper
++ connect endstop switches
++ Print mechanical parts
++ Assemble mechanical parts
++ Power supply
+
+* Software
++ Connect to Wifi
++ Sensor readings
++ MQTT messages with readings and motor positions
++ Motor movement
++ Motor calibration
+o Simple tracking
+o OTA
+
+
+- Power Saving

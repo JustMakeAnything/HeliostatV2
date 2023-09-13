@@ -1,0 +1,6 @@
+external_components:
+  # use rtttl and dfplayer from ESPHome's dev branch in GitHub
+  - source:
+      type: local
+      path: External
+    components: [ a4988 ]
