@@ -1,0 +1,298 @@
+substitutions:
+  MinElevation: "7"
+  MaxElevation: "112.0"
+  MinAzimuth: "90.0"
+  MaxAzimuth: "270.7"
+  Latitude: "0.0"
+  Longitude: "0.0"
+  TargetElevation: "10"
+  TargetAzimuth: "200"
+  Microsteps: "4"
+
+<<: !include base.yaml
+<<: !include external.yaml
+
+packages:
+  motors: !include motors.yaml
+  calibration: !include calibration.yaml
+  testfunctions: !include testfunctions.yaml
+
+esphome:
+  name: heliostat
+  on_boot:
+    priority: -100
+    then:
+      - button.press: triggerorigin    
+
+<<: !include admin.yaml
+
+## Motor control and calibration
+
+globals:
+  - id: targetTheSun
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+
+  - id: searchTheSun
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+
+  - id: searchTheSunCount
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+
+  - id: targetaz
+    type: float
+    restore_value: yes
+    #   0 = north
+    # 180 = south 
+    initial_value: ${TargetAzimuth}
+
+  - id: targetel
+    type: float
+    restore_value: yes
+    # 0  = horizon
+    # 90 = zenith
+    initial_value: ${TargetElevation}
+
+number: 
+
+  - platform: template
+    name: "Azimuth target"
+    optimistic: true    
+    min_value: 170
+    max_value: 210
+    restore_value: true
+    step: 1
+    id: azTargetOverride
+    on_value:
+      then:
+          - globals.set:
+              id: targetaz
+              value: !lambda return id(azTargetOverride).state;
+
+  - platform: template
+    name: "Elevation target"
+    optimistic: true    
+    min_value: -20
+    max_value: 20
+    restore_value: true
+    step: 1
+    id: elTargetOverride
+    on_value:
+      then:
+          - globals.set:
+              id: targetel
+              value: !lambda return id(elTargetOverride).state;
+
+switch:
+  - platform: template
+    name: "Target the sun"
+    id: targetSun
+    optimistic: true
+    turn_on_action:
+      - globals.set:
+          id: targetTheSun
+          value: "true"
+      - lambda: |-
+            id(stepper_el).set_sleep_when_done(false);
+            id(stepper_az).set_sleep_when_done(false);
+
+
+    turn_off_action:
+      - globals.set:
+          id: targetTheSun
+          value: "false"
+      - lambda: |-
+            // Move mirror to a microstepfree position
+            id(updatemirror).execute();
+            id(stepper_el).set_sleep_when_done(true);
+            id(stepper_az).set_sleep_when_done(true);
+
+button:
+
+  - platform: template
+    name: "Trigger sun search"
+    id: triggersunsearch
+
+    on_press:
+      - lambda: |-
+          id(searchTheSunCount) = 0;
+          id(searchTheSun) = true;
+
+  
+
+  - platform: template
+    name: "Calculate the target angles"
+    id: calculatetarget
+
+    on_press:
+      - lambda: |-
+          // angle conversion
+          auto to_rad = [](float deg){
+            float rad = deg / 180 * PI;
+            return deg / 180 * PI;
+          };
+          auto to_deg = [](float rad){
+            return rad * 180 / PI;
+          };
+
+          // Get sun coordinates
+          float SunsAltitude = id(elevation).state;
+          //ESP_LOGI("alt", "%f",id(elevation).state);
+
+          float SunsAzimuth = id(azimuth).state;
+
+          //if(id(targetTheSun && id(searchTheSun))){
+          if(id(targetTheSun)){
+            // Implemented in moveintosun
+          }else{
+            //
+            // Mirroring to target
+            //
+            ESP_LOGI("calculation", "calculating...");
+            float cx,cy,cz,z1,z2,x1,x2,y1,y2,hyp,dist;
+            z1 = sin(to_rad(SunsAltitude));
+            hyp = cos(to_rad(SunsAltitude));
+            x1 = hyp*cos(to_rad(SunsAzimuth*-1));
+            y1 = hyp*sin(to_rad(SunsAzimuth*-1));
+
+            z2 = sin(to_rad(id(targetel)));
+            hyp = cos(to_rad(id(targetel)));
+            x2 = hyp*cos(to_rad(id(targetaz)*-1));
+            y2 = hyp*sin(to_rad(id(targetaz)*-1));  
+            
+            cx=(x1-x2)/2+x2;
+            cy=(y1-y2)/2+y2;
+            cz=(z1-z2)/2+z2;
+            
+            dist=sqrt(cx*cx+cy*cy+cz*cz);
+            if ((dist>-0.0001) && (dist <0.0001)){
+              dist=0.0001;
+            }
+            id(motorel).state=to_deg((float)asin(cz/dist));
+            id(motoraz).state=to_deg(atan2(cy*-1,cx));
+            if(id(motoraz)<0){
+              id(motoraz) = id(motoraz) + 360;
+            }
+            //ESP_LOGI("calculation", "Targetel: %f",id(targetel));
+            //ESP_LOGI("calculation", "Targetaz: %f",id(targetaz));
+            ESP_LOGI("calculation", "Motorel: %f",id(motorel).state);
+            ESP_LOGI("calculation", "Motoraz: %f",id(motoraz).state);
+            id(updatemirror).execute();
+          }
+
+  - platform: template
+    name: "Get sun position and move mirror into sun"
+    id: moveintosun
+
+    on_press:
+      - lambda: |-
+          // angle conversion
+          auto to_rad = [](float deg){
+            float rad = deg / 180 * PI;
+            return deg / 180 * PI;
+          };
+
+          // Get sun coordinates
+          float SunsAltitude = id(elevation).state;
+          float SunsAzimuth = id(azimuth).state;
+          //ESP_LOGI("alt", "%f",id(elevation).state);
+
+          //ESP_LOGI("alt", "%b",id(targetTheSun));
+          if(id(targetTheSun)){
+            // Mirror targets the sun
+            //ESP_LOGI("calculation", "targeting sun");
+            id(motorel).state = SunsAltitude;
+            id(motoraz).state = SunsAzimuth;
+            if(id(searchTheSun)){
+              id(searchTheSunCount)++;
+              float extend = id(searchTheSunCount)/50;
+              id(motorel).state += sin(to_rad(id(searchTheSunCount)))*extend;
+              id(motoraz).state += cos(to_rad(id(searchTheSunCount)))*extend;
+
+              if(id(searchTheSunCount)>360){
+                id(searchTheSun) = false;
+              }
+            }
+            id(updatemirror).execute();
+          }
+
+
+
+  - platform: template
+    name: "is deep sleep needed?"
+    id: activatedeepsleep
+
+    on_press:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(elevation).state < -1;'
+            then:
+                - logger.log: "Sun under horizon: Sleep"
+                - deep_sleep.enter:
+                    sleep_duration: 10s
+
+## Tracking
+sun:
+  latitude: ${Latitude}
+  longitude: ${Longitude}
+
+i2c:
+  sda: 21
+  scl: 22
+  scan: true
+  id: bus_a
+
+ads1115:
+  - address: 0x48
+
+# Update the mirror every 30s
+interval:
+  - interval: 30s
+    then:
+      - button.press: calculatetarget
+
+  - interval: 1min
+    then:
+      - button.press: activatedeepsleep
+
+
+  - interval: 5s  #500ms
+    then:
+      - if:
+          condition:
+            lambda: 'return id(targetTheSun);'
+          then:
+            - button.press: moveintosun
+
+sensor:
+  - platform: ads1115
+    update_interval: 30s
+    multiplexer: 'A0_GND'
+    gain: 4.096
+    name: "Sunlight"
+
+  - platform: ads1115
+    update_interval: 30s
+    multiplexer: 'A1_GND'
+    gain: 4.096
+    name: "Sun_10"
+
+  - platform: sun
+    name: "Sun Elevation"
+    id: "elevation"
+    type: elevation
+    update_interval: 20s
+
+  - platform: sun
+    name: "Sun Azimuth"
+    id: "azimuth"
+    type: azimuth
+    update_interval: 20s
+
