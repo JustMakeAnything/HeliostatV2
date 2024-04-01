@@ -1,0 +1,36 @@
+## Configuration of positions
+                      
+<<: !include constants.yaml
+<<: !include base.yaml
+<<: !include external.yaml
+
+preferences:
+  flash_write_interval: 8min
+
+packages:
+  webui: !include webui.yaml
+  status: !include status.yaml
+  motors: !include motors.yaml
+  sensors: !include sensors.yaml
+  calibration: !include calibration.yaml
+  testfunctions: !include testfunctions.yaml
+
+esphome:
+  name: heliostat
+  includes: 
+    - calculations.h
+
+interval:
+  # Update the mirror every 30s
+  - interval: 30s
+    then:
+      - lambda: |-
+          calculateAngles();
+ 
+  # find origin on startup
+  # todo: find also a way to do complete calibration (maybe after some days?)
+  - interval: 1000d #do only once
+    then:
+      - delay: 5s
+      - button.press: triggercalibration
+#      - button.press: triggerorigin

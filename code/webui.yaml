@@ -1,0 +1,67 @@
+globals:
+  - id: targetaz
+    type: float
+    restore_value: yes
+    #   0 = north
+    # 180 = south 
+    initial_value: ${TargetAzimuth}
+
+  - id: targetel
+    type: float
+    restore_value: yes
+    # 0  = horizon
+    # 90 = zenith
+    initial_value: ${TargetElevation}
+
+# Show the target angles in the webserver
+sensor:
+  - platform: template
+    name: "Target Azimuth"
+    id: "targetazimuth"
+
+  - platform: template
+    name: "Target Elevation"
+    id: "targetelevation"
+
+# change the angles
+button:
+  - platform: template
+    name: "target azimuth+"
+    id: targetazimuthplus
+    on_press:
+      - lambda: |-
+          id(targetaz) += $targetStep;
+          id(targetazimuth).publish_state(id(targetaz));
+
+  - platform: template
+    name: "target azimuth-"
+    id: targetazimuthminus
+    on_press:
+      - lambda: |-
+          id(targetaz) -= $targetStep;
+          id(targetazimuth).publish_state(id(targetaz));
+          
+  - platform: template
+    name: "target elevation+"
+    id: targetelevationplus
+    on_press:
+      - lambda: |-
+          id(targetel) += $targetStep;
+          id(targetelevation).publish_state(id(targetel));
+
+  - platform: template
+    name: "target elevation-"
+    id: targetelevationminus
+    on_press:
+      - lambda: |-
+          id(targetel) -= $targetStep;
+          id(targetelevation).publish_state(id(targetel));
+
+interval:
+  # initialze web ui on bootup
+  - interval: 1000d #do only once
+    then:
+      - delay: 5s
+      - lambda: |-
+          id(targetazimuth).publish_state(id(targetaz));
+          id(targetelevation).publish_state(id(targetel));

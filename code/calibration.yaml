@@ -1,0 +1,179 @@
+globals:
+
+  # The calibration booleans are set to true for the limits
+  # to calibrate. This only controls the desired steps. 
+  # The action has to be triggered by the calibration trigger
+  - id: calibration_down
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+  - id: calibration_up
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+  - id: calibration_west
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+  - id: calibration_east
+    type: boolean
+    restore_value: no
+    initial_value: 'false'
+
+
+  # the maximum number of motor steps in each direction
+  # the calibrations sets the start points to 0
+  - id: upper_limit
+    type: int
+    restore_value: yes
+
+  - id: west_limit
+    type: int
+    restore_value: yes
+
+button:
+  - platform: template
+    name: "Trigger calibration"
+    id: triggercalibration
+    on_press:
+      - globals.set:
+          id: calibration_down
+          value: 'true'
+      - globals.set:
+          id: calibration_up
+          value: 'true'
+      - globals.set:
+          id: calibration_east
+          value: 'true'
+      - globals.set:
+          id: calibration_west
+          value: 'true'
+          # TODO: use a trigger and do this in motors.yaml
+      - lambda: |-
+          // Go to first target (down&left)
+          startCalibration();
+
+  # Only trigger down and east 
+  - platform: template
+    name: "Trigger origin"
+    id: triggerorigin
+    on_press:
+      - globals.set:
+          id: calibration_down
+          value: 'true'
+      - globals.set:
+          id: calibration_east
+          value: 'true'
+      - lambda: |-
+          // Find origin
+          id(origin) = false;
+          startCalibration();
+
+# Endstop buttons
+binary_sensor:
+  - platform: gpio
+    pin: 
+      number: $stopdownpin
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 250ms
+    name: "StopDown"
+    id: "stopdown"
+    # The stopdown button was pressed.
+    on_press:
+      then:
+        - lambda: calibrationDown();
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_down)= false;
+            if(id(calibration_east) == false ){
+              // Finished to find the origin
+              id(origin) = true;
+              if(id(calibration_up) == false){
+                id(calibrating) = false;
+              }
+            }
+
+  - platform: gpio
+    pin: 
+      number: $stopuppin
+      inverted: true
+      mode:
+        input: true
+        pullup: true    
+    filters:
+      - delayed_off: 250ms
+    name: "StopUP"
+    id: "stopup"
+    # The stopup button was pressed.
+    on_press:
+      then:
+        - lambda: calibrationUp();
+
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_up)= false;
+            if(id(calibration_west) == false ){
+              // Finished to calibrate
+              id(calibrating) = false;
+            }
+
+  - platform: gpio
+    pin: 
+      number: $stopeastpin
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 500ms
+    name: "StopEast"
+    id: "stopeast"
+    # The StopEast button was pressed.
+    on_press:
+      then:
+        - lambda: calibrationEast();
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_east) = false;
+            if(id(calibration_down) == false ){
+              // Finished to find the origin
+              id(origin) = true;
+              if(id(calibration_west) == false){
+                id(calibrating) = false;
+              }
+            }
+
+  - platform: gpio
+    pin: 
+      number: $stopwestpin
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 250ms
+    name: "StopWest"
+    id: "stopwest"
+  # West endstop reached (Tis is the 0 limit)
+    on_press:
+      then:
+        - lambda: calibrationWest();    
+    on_release:
+      then:
+        - lambda: |-
+            id(calibration_west) = false;
+            if(id(calibration_up) == false ){
+              // Finished to calibrate
+              id(calibrating) = false;
+            }
+

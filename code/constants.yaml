@@ -1,0 +1,26 @@
+substitutions:
+
+  # Physical capabilites of the heliostat
+  MinElevation: "4.5"    #Where are the endstops
+  MaxElevation: "112.0"  #upper
+  MinAzimuth: "90.0"     #Eastern
+  MaxAzimuth: "270.7"    #Western
+  targetStep: "0.5"      #Step for manual target adjustment
+
+  # Where to reflect to. This is initial only it will be stored in permanent memory and can be changed with the web interface
+  TargetElevation: "10"  
+  TargetAzimuth: "200"   
+
+  # Position on the earth. Maintain in secrets.yaml
+  Latitude: !secret latitude
+  Longitude: !secret longitude
+
+  # Swap these pins when calibration shows 'endstop triggered without calibration'
+  stopdownpin: GPIO16
+  stopuppin:   GPIO4
+  stopwestpin: GPIO17
+  stopeastpin: GPIO18   
+
+  # Internal. Don't change unless you know what you do
+  Microsteps: "4"        # microsteps configured in stepper controller. 
+                         # The stepper controller forgets the microsteps when sleeping, so always this is amount is moved

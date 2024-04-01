@@ -1,0 +1,89 @@
+# number: 
+#   - platform: template
+#     name: "Azimut override"
+#     optimistic: true    
+#     min_value: ${MinAzimuth}
+#     max_value: ${MaxAzimuth}
+#     step: 0.5
+#     id: azOverride
+
+#   - platform: template
+#     name: "Elevation override"
+#     optimistic: true    
+#     min_value: ${MinElevation}
+#     max_value: ${MaxElevation}
+#     step: 0.5
+#     id: elOverride
+
+# button:
+
+#   - platform: template
+#     name: up10
+#     id: button0
+
+#     #icon: "mdi:emoticon-outline"
+#     on_press:
+#       - stepper.set_target:
+#           id: stepper_el
+#           target: 10
+
+#   - platform: template
+#     name: up540
+#     id: button1
+#     on_press:
+#     - stepper.set_target:
+#         id: stepper_el
+#         target: 540
+
+  # - platform: template
+  #   name: az0
+  #   id: buttonaz1
+  #   on_press:
+  #     - stepper.set_target:
+  #         id: stepper_az
+  #         target: 0
+
+  # - platform: template
+  #   name: az2000
+  #   id: buttonaz2
+  #   on_press:
+  #   - stepper.set_target:
+  #       id: stepper_az
+  #       target: 2000          
+
+  # - platform: template
+  #   name: "Get sun position and move mirror into sun"
+  #   id: moveintosun
+
+  #   on_press:
+  #     - lambda: |-
+  #         // angle conversion
+  #         auto to_rad = [](float deg){
+  #           float rad = deg / 180 * PI;
+  #           return deg / 180 * PI;
+  #         };
+
+  #         // Get sun coordinates
+  #         float SunsAltitude = id(elevation).state;
+  #         float SunsAzimuth = id(azimuth).state;
+  #         //ESP_LOGI("alt", "%f",id(elevation).state);
+
+  #         //ESP_LOGI("alt", "%b",id(targetTheSun));
+  #         if(id(targetTheSun)){
+  #           // Mirror targets the sun
+  #           //ESP_LOGI("calculation", "targeting sun");
+  #           id(motorel).state = SunsAltitude;
+  #           id(motoraz).state = SunsAzimuth;
+  #           if(id(searchTheSun)){
+  #             id(searchTheSunCount)++;
+  #             float extend = id(searchTheSunCount)/50;
+  #             id(motorel).state += sin(to_rad(id(searchTheSunCount)))*extend;
+  #             id(motoraz).state += cos(to_rad(id(searchTheSunCount)))*extend;
+
+  #             if(id(searchTheSunCount)>360){
+  #               id(searchTheSun) = false;
+  #             }
+  #           }
+  #           id(updatemirror).execute();
+  #         }
+

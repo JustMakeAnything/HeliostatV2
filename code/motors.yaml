@@ -1,0 +1,64 @@
+globals:
+  - id: minElevation
+    type: float
+    restore_value: no
+    initial_value: ${MinElevation}
+  - id: maxElevation
+    type: float
+    restore_value: no
+    initial_value: ${MaxElevation}
+  - id: minAzimuth
+    type: float
+    restore_value: no
+    initial_value: ${MinAzimuth}
+  - id: maxAzimuth
+    type: float
+    restore_value: no
+    initial_value: ${MaxAzimuth}
+  - id: motorel_prev
+    type: float
+    restore_value: no
+
+stepper:
+  - platform: a4988
+    id: stepper_el
+    step_pin: GPIO27
+    dir_pin: GPIO12
+    max_speed: 300 steps/s
+    sleep_pin:
+      number: GPIO26
+      inverted: true    
+    acceleration: 80 steps/s^2
+    deceleration: 120 steps/s^2
+    sleep_when_done: true
+
+  - platform: a4988
+    id: stepper_az
+    step_pin: GPIO33
+    dir_pin: GPIO25
+    max_speed: 400 steps/s
+    sleep_pin: 
+      number: GPIO32
+      inverted: true
+    acceleration: 80 steps/s^2
+    deceleration: 150 steps/s^2
+    sleep_when_done: true
+
+
+sensor:
+  - platform: template
+    name: "Motor Elevation"
+    id: "motorel"
+
+  - platform: template
+    name: "Motor Azimuth"
+    id: "motoraz"
+
+
+script:
+  # Update mirror position
+  - id: updatemirror
+    then:
+      - lambda: |-
+          motorcontrol();
+

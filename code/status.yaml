@@ -1,0 +1,37 @@
+# Status of the heliostat
+
+# All values which are needed to move mirror to a valid position are ok
+globals:
+  - id: allValid
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+
+  # The steppers are adjusted to the origin
+  - id: origin
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+
+  # During calibration (down,up,left,right) this status is set to avoid any interference
+  - id: calibrating
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+
+  # is the sun above the horizon (mirror can reach valid position)
+  - id: aboveHorizon
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+
+  # is the position calculated
+  - id: calculated
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+
+interval:
+  - interval: 20s
+    then:
+      - lambda: updateStatus();
