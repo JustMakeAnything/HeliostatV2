@@ -98,6 +98,7 @@ binary_sensor:
               id(origin) = true;
               if(id(calibration_up) == false){
                 id(calibrating) = false;
+                calculateAngles();
               }
             }
 
@@ -124,6 +125,7 @@ binary_sensor:
             if(id(calibration_west) == false ){
               // Finished to calibrate
               id(calibrating) = false;
+              calculateAngles();
             }
 
   - platform: gpio
@@ -150,6 +152,8 @@ binary_sensor:
               id(origin) = true;
               if(id(calibration_west) == false){
                 id(calibrating) = false;
+                updateStatus();
+                calculateAngles();
               }
             }
 
@@ -175,5 +179,6 @@ binary_sensor:
             if(id(calibration_up) == false ){
               // Finished to calibrate
               id(calibrating) = false;
+              calculateAngles();
             }
 

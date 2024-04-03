@@ -1,0 +1,63 @@
+# Calibrate the heliostat according to a sun sensor
+globals:
+  - id: measuresun
+    type: boolean
+    restore_value: no
+    initial_value: "false"
+  - id: measuresuncount
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+switch:
+  - platform: template
+    name: "Target the sun"
+    id: targetSun
+    optimistic: true
+    turn_on_action:
+      - globals.set:
+          id: measuresun
+          value: "true"
+      - globals.set:
+          id: measuresuncount
+          value: '0'
+      - lambda: |-
+            id(stepper_el).set_sleep_when_done(false);
+            id(stepper_az).set_sleep_when_done(false);
+            id(sunlight1).set_update_interval(500); //ms
+
+
+    turn_off_action:
+      - globals.set:
+          id: measuresun
+          value: "false"
+      - lambda: |-
+            // Move mirror to a microstepfree position
+            id(updatemirror).execute();
+            id(sunlight1).set_update_interval(5000000); //ms
+            id(stepper_el).set_sleep_when_done(true);
+            id(stepper_az).set_sleep_when_done(true);
+# button:
+#   - platform: template
+#     name: "Measure the sun"
+#     id: measuresun
+#     on_press:
+#       - globals.set:
+#           id: measuresun
+#           value: 'true'
+#       - globals.set:
+#           id: measuresuncount
+#           value: '0'
+#   - platform: template
+#     name: "Heliostat mode"
+#     id: heliostatmode
+#     on_press:
+#       - globals.set:
+#           id: measuresun
+#           value: 'false'
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          measurethesun();

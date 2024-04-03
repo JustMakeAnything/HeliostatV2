@@ -2,15 +2,15 @@ sun:
   latitude: ${Latitude}
   longitude: ${Longitude}
 
-# experimental, currently not used:
-# i2c:
-#   sda: 21
-#   scl: 22
-#   scan: true
-#   id: bus_a
+#experimental, currently not used:
+i2c:
+  sda: 21
+  scl: 22
+  scan: true
+  id: bus_a
 
-# ads1115:
-#   - address: 0x48
+ads1115:
+  - address: 0x48
 
 
 sensor:
@@ -26,14 +26,15 @@ sensor:
     type: azimuth
     update_interval: 15s
 
-  # - platform: ads1115
-  #   update_interval: 30s
-  #   multiplexer: 'A0_GND'
-  #   gain: 4.096
-  #   name: "Sunlight"
+  - platform: ads1115
+    update_interval: 30s
+    multiplexer: 'A0_GND'
+    gain: 4.096
+    id: "sunlight1"
+    name: "Sunlight"
 
-  # - platform: ads1115
-  #   update_interval: 30s
-  #   multiplexer: 'A1_GND'
-  #   gain: 4.096
-  #   name: "Sun_10"
+  - platform: ads1115
+    update_interval: 30s
+    multiplexer: 'A1_GND'
+    gain: 4.096
+    name: "Sun_10"

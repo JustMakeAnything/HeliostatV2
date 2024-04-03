@@ -15,6 +15,9 @@ void calculateAngles() {
     //
     // Mirroring to target
     //
+    if (id(measuresun) == true) {
+        return;
+    }
     ESP_LOGI("calculation", "calculating...");
     float cx, cy, cz, z1, z2, x1, x2, y1, y2, hyp, dist;
     z1 = sin(to_rad(SunsAltitude));
@@ -70,6 +73,13 @@ void setelevation(int steps) {
 void setazimuth(int steps) {
     id(stepper_az).set_target(steps*microsteps);
 }
+void setsubstepazimuth(int steps) {
+    id(stepper_az).set_target(steps);
+}
+void setsubstepelevation(int steps) {
+    id(stepper_el).set_target(steps);
+}
+
 
 int toMicrostep(int motorPos) {
     int motorValue = motorPos;
@@ -226,4 +236,35 @@ void updateStatus() {
             ESP_LOGI("status invalid", "calibration running or failed");
         }
     }
+}
+void measurethesun() {
+    static int substepazimuth;
+    static int substepelevation;
+    if (id(measuresun) == false) {
+        return;
+    }
+    int count = id(measuresuncount);
+    id(measuresuncount)++;
+    if (count > 500) {
+        id(measuresuncount) = 1;
+        count = 1;
+    }
+    if (count == 0) {
+        // switch to continious mode
+        substepazimuth   = getazimuth() * microsteps;
+        substepelevation = getelevation() * microsteps;
+    }
+    // if (count <= 100) {
+    //     substepazimuth++;
+    // } else {
+    //     substepazimuth--;
+    // }
+    // spiral
+    float angle = static_cast<float>(count) / 20.0f;
+    float extend = static_cast<float>(count) / 4.0f;
+    int spiralaz = sin(angle) * extend;
+    int spiralel = cos(angle) * extend;
+    setsubstepazimuth(substepazimuth+spiralaz);
+    setsubstepelevation(substepelevation+spiralel);
+
 }

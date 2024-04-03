@@ -14,6 +14,7 @@ packages:
   sensors: !include sensors.yaml
   calibration: !include calibration.yaml
   testfunctions: !include testfunctions.yaml
+  suncalibration: !include suncalibration.yaml
 
 esphome:
   name: heliostat
@@ -31,6 +32,6 @@ interval:
   # todo: find also a way to do complete calibration (maybe after some days?)
   - interval: 1000d #do only once
     then:
-      - delay: 5s
-      - button.press: triggercalibration
-#      - button.press: triggerorigin
+      - delay: 15s
+#      - button.press: triggercalibration
+      - button.press: triggerorigin
