@@ -25,8 +25,12 @@ interval:
   # Update the mirror every 30s
   - interval: 30s
     then:
-      - lambda: |-
-          calculateAngles();
+      script.execute: updatemirror
+
+  Search for the sun every 10 minutes
+  - interval: 10min
+    then:
+      - switch.turn_on: targetSun
  
   # find origin on startup
   # todo: find also a way to do complete calibration (maybe after some days?)

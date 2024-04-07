@@ -1,5 +1,6 @@
 # Calibrate the heliostat according to a sun sensor
 globals:
+  # for the mirror moving
   - id: measuresun
     type: boolean
     restore_value: no
@@ -8,6 +9,25 @@ globals:
     type: int
     restore_value: no
     initial_value: "0"
+  # For the measurements
+  - id: measurementscount
+    type: int
+    restore_value: no
+    initial_value: "0"
+  # Maximum 10 measurements
+  - id: measurements
+    type: int[10][3]
+    restore_value: no
+    #initial_value: 
+
+sensor:
+  - platform: template
+    name: "sunmeasel"
+    id: "sunmeasel"
+
+  - platform: template
+    name: "sunmeasaz"
+    id: "sunmeasaz"
 
 switch:
   - platform: template
@@ -20,11 +40,11 @@ switch:
           value: "true"
       - globals.set:
           id: measuresuncount
-          value: '0'
+          value: '-40' # Some time to go to start (this value*interval should be abount 10s)
       - lambda: |-
+            ESP_LOGI("measure", "an");      
             id(stepper_el).set_sleep_when_done(false);
             id(stepper_az).set_sleep_when_done(false);
-            id(sunlight1).set_update_interval(500); //ms
 
 
     turn_off_action:
@@ -33,10 +53,11 @@ switch:
           value: "false"
       - lambda: |-
             // Move mirror to a microstepfree position
+            ESP_LOGI("measure", "aus");
             id(updatemirror).execute();
-            id(sunlight1).set_update_interval(5000000); //ms
             id(stepper_el).set_sleep_when_done(true);
             id(stepper_az).set_sleep_when_done(true);
+
 # button:
 #   - platform: template
 #     name: "Measure the sun"
@@ -57,7 +78,7 @@ switch:
 #           value: 'false'
 
 interval:
-  - interval: 50ms
+  - interval: 250ms
     then:
       - lambda: |-
           measurethesun();

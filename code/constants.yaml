@@ -1,8 +1,8 @@
 substitutions:
 
   # Physical capabilites of the heliostat
-  MinElevation: "4.5"    #Where are the endstops
-  MaxElevation: "112.0"  #upper
+  MinElevation: "8"    #Where are the endstops
+  MaxElevation: "90.0"  #upper
   MinAzimuth: "90.0"     #Eastern
   MaxAzimuth: "270.7"    #Western
   targetStep: "0.5"      #Step for manual target adjustment

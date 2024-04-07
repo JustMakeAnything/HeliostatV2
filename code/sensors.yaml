@@ -11,6 +11,7 @@ i2c:
 
 ads1115:
   - address: 0x48
+    continuous_mode: true
 
 
 sensor:
@@ -27,14 +28,22 @@ sensor:
     update_interval: 15s
 
   - platform: ads1115
-    update_interval: 30s
+    update_interval: 15s
     multiplexer: 'A0_GND'
     gain: 4.096
-    id: "sunlight1"
-    name: "Sunlight"
-
+    id: "shortdirectedsun" #slight direct sun
+    name: "ShortDS"
+    
   - platform: ads1115
-    update_interval: 30s
+    update_interval: 15s
     multiplexer: 'A1_GND'
     gain: 4.096
-    name: "Sun_10"
+    id: "ambientsun"
+    name: "AS"
+
+  - platform: ads1115
+    update_interval: 15s
+    multiplexer: 'A2_GND'
+    gain: 4.096
+    id: "directedsun"
+    name: "DS"

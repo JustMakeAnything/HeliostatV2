@@ -1,4 +1,8 @@
 // Copyright 2024
+const int microsteps = 4;
+const int maxextend = 5000;
+const int clearance = microsteps * 4;
+
 float to_rad(float deg) {
     float rad = deg / 180 * PI;
     return deg / 180 * PI;
@@ -47,14 +51,13 @@ void calculateAngles() {
     // ESP_LOGI("calculation", "Targetaz: %f",id(targetaz));
     // ESP_LOGI("calculation", "Motorel: %f",id(motorel).state);
     // ESP_LOGI("calculation", "Motoraz: %f",id(motoraz).state);
-    id(updatemirror).execute();
 }
 
-int setMotor(float motorPos, float min, float max, float limit) {
+int setMotor(float motorPos, float min, float max, int limit) {
     if (motorPos < 0) {
         motorPos += 360.0f;
     }
-    motorPos = (motorPos - min) / (max-min) * limit;
+    motorPos = (motorPos - min) / (max-min) * static_cast<float>(limit);
     // ESP_LOGI("calculation", "Motor Stepper: %f",motorPos);
     // ESP_LOGI("calculation", "MinAzimuth Stepper: %f",id(minAzimuth));
     // ESP_LOGI("calculation", "MaxAzimuth Stepper: %f",id(maxAzimuth));
@@ -64,22 +67,28 @@ int setMotor(float motorPos, float min, float max, float limit) {
     }
     return -1;
 }
-
-const int microsteps = 4;
+float motorToAngle(int motorPos, float min, float max, int motorsteps) {
+    // min, max = angles limt = motorsteps
+    float angle = motorPos / static_cast<float>(motorsteps);
+    angle = (angle * max - min) + min;
+    // ESP_LOGI("calculation", "Motor Stepper: %f",motorPos);
+    if (angle < 0) {
+        angle += 360.0f;
+    }
+        return angle;
+}
 
 void setelevation(int steps) {
-    id(stepper_el).set_target(steps*microsteps);
-}
-void setazimuth(int steps) {
-    id(stepper_az).set_target(steps*microsteps);
-}
-void setsubstepazimuth(int steps) {
-    id(stepper_az).set_target(steps);
-}
-void setsubstepelevation(int steps) {
     id(stepper_el).set_target(steps);
 }
-
+void setazimuth(int steps) {
+    id(stepper_az).set_target(steps);
+}
+int roundToMicrostep(int motorPos) {
+    int motorValue = motorPos;
+    // microsteps;
+    return ( motorValue / microsteps ) * microsteps;
+}
 
 int toMicrostep(int motorPos) {
     int motorValue = motorPos;
@@ -88,7 +97,7 @@ int toMicrostep(int motorPos) {
 }
 
 void motorcontrol() {
-    if (id(allValid) == false) {
+    if ((id(allValid) == false) || (id(measuresun) == true)) {
         return;
     }
     //
@@ -121,28 +130,30 @@ void motorcontrol() {
         ESP_LOGI("motor", "out of bounds of motors");
         return;
     }
+    targetEl = roundToMicrostep(targetEl);
+    targetAz = roundToMicrostep(targetAz);
     setelevation(targetEl);
     setazimuth(targetAz);
 }
 
 int getelevation() {
-    return id(stepper_el).current_position/microsteps;
+    return id(stepper_el).current_position;
 }
 int getazimuth() {
-    return id(stepper_az).current_position/microsteps;
+    return id(stepper_az).current_position;
 }
 
 void reportelevation(int steps) {
-    id(stepper_el).report_position(steps*microsteps);
+    id(stepper_el).report_position(steps);
 }
 void reportazimuth(int steps) {
-    id(stepper_az).report_position(steps*microsteps);
+    id(stepper_az).report_position(steps);
 }
 
 void startCalibration() {
     id(calibrating) = true;
-    setelevation(-600);  // move down to find minimum
-    setazimuth(-1100);   // East
+    setelevation(-maxextend);  // move down to find minimum
+    setazimuth(-maxextend);    // East
 }
 
 void releaseElevation() {
@@ -156,13 +167,13 @@ void releaseAzimuth() {
 
 void calibrationDown() {
     if (id(calibration_down) == true) {
-        // set the endstop to -4, then move to 0
-        reportelevation(-4);
+        // set the endstop to -clearance, then move to 0
+        reportelevation(-clearance);
         setelevation(0);
         ESP_LOGI("calibration", "lower limit reset");
         if (id(calibration_up) == true) {
             // Go up
-            setelevation(1000);
+            setelevation(maxextend);
         }
     } else {
         ESP_LOGI("calibration", "Down endstop triggered without calibration. Check cabling");
@@ -173,23 +184,23 @@ void calibrationDown() {
 void calibrationUp() {
     if (id(calibration_up) == true) {
         // set limit then stop
-        id(upper_limit) = getelevation()-4;
+        id(upper_limit) = getelevation()-clearance;
         setelevation(id(upper_limit));
         ESP_LOGI("calibration", "upper limit set to %d", id(upper_limit));
     } else {
-        setelevation(getelevation()-4);
+        setelevation(getelevation()-clearance);
         ESP_LOGI("calibration", "Up endstop triggered without calibration. Check cabling");
     }
 }
 void calibrationEast() {
     if (id(calibration_east) == true) {
-        // set the endstop to -4, then move to 0
-        reportazimuth(-4);
+        // set the endstop to -clearance, then move to 0
+        reportazimuth(-clearance);
         setazimuth(0);
         ESP_LOGI("calibration", "east limit reset");
         if (id(calibration_west) == true) {
             // Go west
-            setazimuth(1500);
+            setazimuth(maxextend);
         }
     } else {
         ESP_LOGI("calibration", "East endstop triggered without calibration. Check cabling");
@@ -200,12 +211,23 @@ void calibrationEast() {
 void calibrationWest() {
     if (id(calibration_west) == true) {
         // set limit then stop
-        id(west_limit) = getazimuth()-4;
+        id(west_limit) = getazimuth()-clearance;
         setazimuth(id(west_limit));
         ESP_LOGI("calibration", "west limit set to %d", id(west_limit));
     } else {
-        setazimuth(getazimuth()-4);
+        setazimuth(getazimuth()-clearance);
         ESP_LOGI("calibration", "West endstop triggered without calibration. Check cabling");
+    }
+}
+
+void finishCalibration(bool &currentid, bool nextid) {
+    ESP_LOGI("finish", "%d", nextid);
+    currentid = false;
+    if (nextid == false) {
+        ESP_LOGI("finish", "finished");
+        // Finished to calibrate
+        id(calibrating) = false;
+        id(updatemirror).execute();
     }
 }
 
@@ -237,34 +259,91 @@ void updateStatus() {
         }
     }
 }
-void measurethesun() {
-    static int substepazimuth;
-    static int substepelevation;
-    if (id(measuresun) == false) {
+void storeMeasurement(float maxlight, int maxlightaz, int maxlightel) {
+    // Memorize in volatile memory
+    // Try to adjust when already enough data is recieved
+    // See doku
+    if (maxlight < 0.8) {
+        // TODO: Check the short light sensor
         return;
     }
+    id(sunmeasaz).publish_state(maxlightaz);
+    id(sunmeasel).publish_state(maxlightel);
+    int meascount = id(measurementscount) % 10;
+    id(measurementscount)++;
+    id(measurements)[meascount][0] = static_cast<int>(maxlight * 1000.0f);
+    id(measurements)[meascount][1] = maxlightaz;
+    id(measurements)[meascount][2] = maxlightel;
+}
+
+void measurethesun() {
+    // This is the routine which is called every few milliseconds (see suncalibration.yaml interval)
+    float SunsAltitude = id(elevation).state;
+    float SunsAzimuth = id(azimuth).state;
+    // static int substepazimuth;
+    // static int substepelevation;
+    static float maxlightratio;
+    static int maxlightaz;
+    static int maxlightel;
+
+    if (id(measuresun) == false || (id(allValid) == false)) {
+        return;
+    }
+    int targetEl = setMotor(SunsAltitude, id(minElevation), id(maxElevation), static_cast<float>(id(upper_limit)));
+    int targetAz = setMotor(SunsAzimuth,  id(minAzimuth),   id(maxAzimuth),   static_cast<float>(id(west_limit)));
+    // ESP_LOGI("measure", "sun: %f, %f, %d, %d  ", SunsAltitude, SunsAzimuth, targetEl, targetAz);
+
     int count = id(measuresuncount);
     id(measuresuncount)++;
-    if (count > 500) {
-        id(measuresuncount) = 1;
-        count = 1;
+    if (count < 0) {
+        setelevation(targetEl);
+        setazimuth(targetAz);
+        return;  // Go to start position
     }
     if (count == 0) {
-        // switch to continious mode
-        substepazimuth   = getazimuth() * microsteps;
-        substepelevation = getelevation() * microsteps;
+        // reset current maxvalue
+        maxlightratio = 0;
     }
-    // if (count <= 100) {
-    //     substepazimuth++;
-    // } else {
-    //     substepazimuth--;
-    // }
-    // spiral
-    float angle = static_cast<float>(count) / 20.0f;
-    float extend = static_cast<float>(count) / 4.0f;
-    int spiralaz = sin(angle) * extend;
-    int spiralel = cos(angle) * extend;
-    setsubstepazimuth(substepazimuth+spiralaz);
-    setsubstepelevation(substepelevation+spiralel);
+    if (count > 350) {
+        // Store the result
+        ESP_LOGI("measure", "finished sun search successfully ");
+        storeMeasurement(maxlightratio, maxlightaz, maxlightel);
+        id(targetSun).turn_off();
+        return;
+    }
 
+    // spiral
+    float angle = static_cast<float>(count) / 5.0f;
+    float extend = static_cast<float>(count) / 2.0f;
+    id(ambientsun).update();
+    id(directedsun).update();
+    id(shortdirectedsun).update();
+    float ambientsunlight = id(ambientsun).state;
+    float directedsunlight = id(directedsun).state;
+    if (ambientsunlight < 2.87) {
+        // Too dark for a good measurement
+        ESP_LOGI("measure", "too dark for sun calibration %f", ambientsunlight);
+        id(measuresuncount) = 0;
+        id(targetSun).turn_off();
+        return;
+    }
+    int spiralaz = static_cast<int>(sin(angle) * extend);
+    int spiralel = static_cast<int>(cos(angle) * extend);
+    // TODO: Check for out of range
+    setelevation(targetEl+spiralaz);
+    setazimuth(targetAz+spiralel);
+
+    ESP_LOGI("measure", "ambient: %f direct: %f saz: %d sel: %d",
+                        ambientsunlight, directedsunlight, spiralaz, spiralel);
+    // Measure
+    //if (directedsunlight > 0.0f) {
+        float lightratio = directedsunlight / ambientsunlight;
+        if (lightratio > maxlightratio) {
+            maxlightratio = lightratio;
+            // maxlightaz = targetAz+spiralaz;
+            // maxlightel = targetEl+spiralel;
+            maxlightaz = spiralaz;
+            maxlightel = spiralel;
+        }
+    //}
 }

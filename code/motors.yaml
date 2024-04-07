@@ -60,5 +60,7 @@ script:
   - id: updatemirror
     then:
       - lambda: |-
+          calculateAngles();
+          updateStatus();
           motorcontrol();
 

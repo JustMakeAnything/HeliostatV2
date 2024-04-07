@@ -96,10 +96,7 @@ binary_sensor:
             if(id(calibration_east) == false ){
               // Finished to find the origin
               id(origin) = true;
-              if(id(calibration_up) == false){
-                id(calibrating) = false;
-                calculateAngles();
-              }
+              finishCalibration(id(calibration_down),id(calibration_up));
             }
 
   - platform: gpio
@@ -120,13 +117,7 @@ binary_sensor:
 
     on_release:
       then:
-        - lambda: |-
-            id(calibration_up)= false;
-            if(id(calibration_west) == false ){
-              // Finished to calibrate
-              id(calibrating) = false;
-              calculateAngles();
-            }
+        - lambda: finishCalibration(id(calibration_up),id(calibration_west));
 
   - platform: gpio
     pin: 
@@ -150,11 +141,7 @@ binary_sensor:
             if(id(calibration_down) == false ){
               // Finished to find the origin
               id(origin) = true;
-              if(id(calibration_west) == false){
-                id(calibrating) = false;
-                updateStatus();
-                calculateAngles();
-              }
+              finishCalibration(id(calibration_east),id(calibration_west));
             }
 
   - platform: gpio
@@ -174,11 +161,5 @@ binary_sensor:
         - lambda: calibrationWest();    
     on_release:
       then:
-        - lambda: |-
-            id(calibration_west) = false;
-            if(id(calibration_up) == false ){
-              // Finished to calibrate
-              id(calibrating) = false;
-              calculateAngles();
-            }
+        - lambda: finishCalibration(id(calibration_west),id(calibration_up));
 

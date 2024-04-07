@@ -26,12 +26,13 @@ web_server:
 
 # Enable logging
 logger:
-  level: INFO
+  #No measurements, since it is too much for sun search
+  #level: INFO 
 
 # Enable Home Assistant API
-# api:
-#   password: ""
-#   reboot_timeout: 0s
+api:
+  password: ""
+  reboot_timeout: 0s
 
 ota:
   password: ""
