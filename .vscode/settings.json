@@ -2,6 +2,8 @@
     "files.associations": {
         "cmath": "cpp",
         "iosfwd": "cpp",
-        "xlocbuf": "cpp"
+        "xlocbuf": "cpp",
+        "thread": "cpp",
+        "xlocale": "cpp"
     }
 }

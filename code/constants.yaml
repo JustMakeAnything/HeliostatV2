@@ -1,10 +1,10 @@
 substitutions:
 
   # Physical capabilites of the heliostat
-  MinElevation: "8"    #Where are the endstops
-  MaxElevation: "90.0"  #upper
-  MinAzimuth: "90.0"     #Eastern
-  MaxAzimuth: "270.7"    #Western
+  MinElevation: "5"    #Where are the endstops
+  MaxElevation: "85.0"  #upper
+  MinAzimuth: "93.0"     #Eastern
+  MaxAzimuth: "273.7"    #Western
   targetStep: "0.5"      #Step for manual target adjustment
 
   # Where to reflect to. This is initial only it will be stored in permanent memory and can be changed with the web interface

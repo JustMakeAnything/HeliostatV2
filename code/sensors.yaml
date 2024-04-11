@@ -35,14 +35,14 @@ sensor:
     name: "ShortDS"
     
   - platform: ads1115
-    update_interval: 15s
+    update_interval: 20s
     multiplexer: 'A1_GND'
     gain: 4.096
     id: "ambientsun"
     name: "AS"
 
   - platform: ads1115
-    update_interval: 15s
+    update_interval: 99s
     multiplexer: 'A2_GND'
     gain: 4.096
     id: "directedsun"

@@ -14,9 +14,9 @@ globals:
     type: int
     restore_value: no
     initial_value: "0"
-  # Maximum 10 measurements
+  # Maximum 20 measurements
   - id: measurements
-    type: int[10][3]
+    type: int[20][5]
     restore_value: no
     #initial_value: 
 
@@ -42,7 +42,7 @@ switch:
           id: measuresuncount
           value: '-40' # Some time to go to start (this value*interval should be abount 10s)
       - lambda: |-
-            ESP_LOGI("measure", "an");      
+            ESP_LOGI("measure", "begin of sunsearch");      
             id(stepper_el).set_sleep_when_done(false);
             id(stepper_az).set_sleep_when_done(false);
 
@@ -53,32 +53,22 @@ switch:
           value: "false"
       - lambda: |-
             // Move mirror to a microstepfree position
-            ESP_LOGI("measure", "aus");
+            ESP_LOGI("measure", "end of sunsearch");
             id(updatemirror).execute();
             id(stepper_el).set_sleep_when_done(true);
             id(stepper_az).set_sleep_when_done(true);
 
-# button:
-#   - platform: template
-#     name: "Measure the sun"
-#     id: measuresun
-#     on_press:
-#       - globals.set:
-#           id: measuresun
-#           value: 'true'
-#       - globals.set:
-#           id: measuresuncount
-#           value: '0'
-#   - platform: template
-#     name: "Heliostat mode"
-#     id: heliostatmode
-#     on_press:
-#       - globals.set:
-#           id: measuresun
-#           value: 'false'
+button:
+  - platform: template
+    name: "calculateBoundary"
+    id: calculateboundary
+    on_press:
+      - lambda: calculatenewbounds();
 
 interval:
   - interval: 250ms
     then:
       - lambda: |-
           measurethesun();
+
+# TODO: Check origin calibration every... and log result

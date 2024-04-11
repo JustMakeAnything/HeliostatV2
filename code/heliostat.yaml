@@ -27,8 +27,9 @@ interval:
     then:
       script.execute: updatemirror
 
-  Search for the sun every 10 minutes
-  - interval: 10min
+  # Search for the sun try every 3 minutes to see if sun is available
+  # This has to be longer than the maximum sunsearch (500/4) = 125+x sec
+  - interval: 3min
     then:
       - switch.turn_on: targetSun
  

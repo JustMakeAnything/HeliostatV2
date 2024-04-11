@@ -27,7 +27,7 @@ web_server:
 # Enable logging
 logger:
   #No measurements, since it is too much for sun search
-  #level: INFO 
+  level: INFO 
 
 # Enable Home Assistant API
 api:
