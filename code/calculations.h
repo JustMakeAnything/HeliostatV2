@@ -8,7 +8,7 @@ const float minambient = 2.90;         // 2.87 - 2.92 is a good value higher val
 const int maxcount = 500;              // Maximum of steps for calibration
 const int stepsperrotation = 50;       // Steps one spiral will take
 const int waves = 3;
-const int sunsearchdelay = 300;        // Seconds between sunsearch (successful storage & next start)
+const int sunsearchdelay = 1800;       // Seconds between sunsearch (successful storage & next start)
 const int searchextend = 150;
 const float targetstep = 0.5;
 
@@ -23,7 +23,7 @@ void calculateAngles() {
     if (id(measuresun) == true || id(manualmode) == true) {
         return;
     }
-    ESP_LOGI("calculation", "calculating...");
+    // ESP_LOGI("calculation", "calculating...");
     float cx, cy, cz, z1, z2, x1, x2, y1, y2, hyp, dist;
     z1 = sin(to_rad(SunsAltitude));
     hyp = cos(to_rad(SunsAltitude));
@@ -88,7 +88,7 @@ float angleofelabs(int steps) {
 }
 
 void updateStatus() {
-    if (id(elevation).state > 1) {
+    if (id(elevation).state > 15) {
         id(aboveHorizon) = true;
     } else {
         id(aboveHorizon) = false;
@@ -100,6 +100,11 @@ void updateStatus() {
         //
         id(allValid) = true;
     } else {
+        static int messagesupress;
+        messagesupress++;
+        if (messagesupress%10 != 0) {
+            return;
+        }
         id(allValid) = false;
         if (id(origin) == false) {
             ESP_LOGI("status invalid", "origin not set");
@@ -409,7 +414,8 @@ void measurethesun() {
     // Goal is to be fast while having a variety of measurements while the drift happens
     // start at PI/2 = sin -1
     // 2PI = 1 full rotation
-    float sincurve = sin((static_cast<float>(count)/static_cast<float>(maxcount) * PI * 2 * waves)-PI / 2)/2 + 0.5;
+    float sincurve = sin((static_cast<float>(count)/static_cast<float>(maxcount) * PI * 2.0f * waves)
+                    -PI / 2.0f) / 2.05f + 0.5f;  // /2.05 = +/-0.48 + 0.5 = +/-0.012 * 150 = 1.83 minimum extend
     float extend = sincurve * static_cast<float>(searchextend);
     // Drift
     if (lastmaximum > 31) {

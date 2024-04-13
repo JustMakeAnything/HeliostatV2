@@ -11,8 +11,8 @@ substitutions:
   # MinAzimuth: "93.0"     #Eastern
   # MaxAzimuth: "273.7"    #Western
   #gekippt
-  MinAzimuth: "113.0"    #Eastern
-  MaxAzimuth: "293.0"    #Western
+  MinAzimuth: "113.0"    #Eastern  127 / 125  diff: 184 / 188
+  MaxAzimuth: "293.0"    #Western  311 / 313 
   #targetStep: "0.5"      #Step for manual target adjustment
 
 ## NEW

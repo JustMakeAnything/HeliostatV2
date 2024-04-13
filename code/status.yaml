@@ -31,7 +31,7 @@ globals:
     restore_value: no
     initial_value: "false"
 
-interval:
-  - interval: 20s
-    then:
-      - lambda: updateStatus();
+# interval:
+#   - interval: 20s
+#     then:
+#       - lambda: updateStatus();
