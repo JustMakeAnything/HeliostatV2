@@ -1,0 +1,40 @@
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: arduino
+
+time:
+  - platform: sntp
+    id: sntp_time
+    servers: 
+      - 116.203.244.102
+      -  90.187.112.137
+    on_time_sync:
+      then:
+        - logger.log: "Time synchronized"
+
+# Enable logging
+logger:
+  #No measurements, since it is too much for sun search
+  level: INFO 
+
+# Enable Home Assistant API
+api:
+  password: ""
+  reboot_timeout: 0s
+
+ota:
+  password: ""
+
+wifi:
+  id: wifiid
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s # No reboot. Wifi is controled in status.yaml
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Webserver Fallback Hotspot"
+    password: "PLsjAHFkVIKf"
+
+captive_portal:

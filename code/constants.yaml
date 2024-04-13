@@ -1,11 +1,25 @@
 substitutions:
 
   # Physical capabilites of the heliostat
+  #eben
+  # MinElevation: "5"    #Where are the endstops
+  # MaxElevation: "85.0"  #upper
+  #gekippt
   MinElevation: "5"    #Where are the endstops
   MaxElevation: "85.0"  #upper
-  MinAzimuth: "93.0"     #Eastern
-  MaxAzimuth: "273.7"    #Western
-  targetStep: "0.5"      #Step for manual target adjustment
+  # Markiert eben
+  # MinAzimuth: "93.0"     #Eastern
+  # MaxAzimuth: "273.7"    #Western
+  #gekippt
+  MinAzimuth: "113.0"    #Eastern
+  MaxAzimuth: "293.0"    #Western
+  #targetStep: "0.5"      #Step for manual target adjustment
+
+## NEW
+  tiltMiddle: "201.0"
+  tiltAngle:   "17.0"
+  # kippwinkel azimuth   (202)
+  # kippwinkel elevation (17) 
 
   # Where to reflect to. This is initial only it will be stored in permanent memory and can be changed with the web interface
   TargetElevation: "10"  

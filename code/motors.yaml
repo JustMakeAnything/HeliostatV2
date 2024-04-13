@@ -15,9 +15,20 @@ globals:
     type: float
     restore_value: no
     initial_value: ${MaxAzimuth}
-  - id: motorel_prev
+  # - id: motorel_prev
+  #   type: float
+  #   restore_value: no
+
+  # tilt
+  - id: tiltmiddle
     type: float
     restore_value: no
+    initial_value: ${tiltMiddle}
+  - id: tiltangle
+    type: float
+    restore_value: no
+    initial_value: ${tiltAngle}
+
 
 stepper:
   - platform: a4988

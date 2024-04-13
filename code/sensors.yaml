@@ -28,21 +28,21 @@ sensor:
     update_interval: 15s
 
   - platform: ads1115
-    update_interval: 15s
+    update_interval: 5min
     multiplexer: 'A0_GND'
     gain: 4.096
     id: "shortdirectedsun" #slight direct sun
     name: "ShortDS"
     
   - platform: ads1115
-    update_interval: 20s
+    update_interval: 3min
     multiplexer: 'A1_GND'
     gain: 4.096
     id: "ambientsun"
     name: "AS"
 
   - platform: ads1115
-    update_interval: 99s
+    update_interval: 3min
     multiplexer: 'A2_GND'
     gain: 4.096
     id: "directedsun"

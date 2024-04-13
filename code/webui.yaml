@@ -13,6 +13,15 @@ globals:
     # 90 = zenith
     initial_value: ${TargetElevation}
 
+  # - id: manualaz
+  #   type: float
+  #   restore_value: no
+  #   initial_value: 0
+  # - id: manualel
+  #   type: float
+  #   restore_value: no
+  #   initial_value: 0
+
 # Show the target angles in the webserver
 sensor:
   - platform: template
@@ -23,39 +32,58 @@ sensor:
     name: "Target Elevation"
     id: "targetelevation"
 
+  - platform: template
+    name: "Maunual Azimuth"
+    id: "manualazimuth"
+  - platform: template
+    name: "Maunual Elevation"
+    id: "manualelevation"
+
 # change the angles
 button:
   - platform: template
     name: "target azimuth+"
     id: targetazimuthplus
     on_press:
-      - lambda: |-
-          id(targetaz) += $targetStep;
-          id(targetazimuth).publish_state(id(targetaz));
+      - lambda: azimuthplus(1.0f);
+          # if(id(manualmode)==true){
+          #   movemotorazrelative( 1.0 );
+          # } else {
+          #   id(targetaz) += $targetStep;
+          #   id(targetazimuth).publish_state(id(targetaz));
+          #   id(updatemirror).execute();
+          # }
 
   - platform: template
     name: "target azimuth-"
     id: targetazimuthminus
     on_press:
-      - lambda: |-
-          id(targetaz) -= $targetStep;
-          id(targetazimuth).publish_state(id(targetaz));
+      - lambda: azimuthplus(-1.0f);
+          # if(id(manualmode)==true){
+          #   movemotorazrelative( -1.0 );
+          # } else {
+          #   id(targetaz) -= $targetStep;
+          #   id(targetazimuth).publish_state(id(targetaz));
+          #   id(updatemirror).execute();
+          # }
           
   - platform: template
     name: "target elevation+"
     id: targetelevationplus
     on_press:
-      - lambda: |-
-          id(targetel) += $targetStep;
-          id(targetelevation).publish_state(id(targetel));
+      - lambda: elevationplus(1.0f);
+          # id(targetel) += $targetStep;
+          # id(targetelevation).publish_state(id(targetel));
+          # id(updatemirror).execute();
 
   - platform: template
     name: "target elevation-"
     id: targetelevationminus
     on_press:
-      - lambda: |-
-          id(targetel) -= $targetStep;
-          id(targetelevation).publish_state(id(targetel));
+      - lambda: elevationplus(-1.0f);
+          # id(targetel) -= $targetStep;
+          # id(targetelevation).publish_state(id(targetel));
+          # id(updatemirror).execute();
 
 interval:
   # initialze web ui on bootup

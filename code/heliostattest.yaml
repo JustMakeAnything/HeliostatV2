@@ -1,0 +1,29 @@
+## Configuration of positions
+                      
+<<: !include constants.yaml
+<<: !include basetest.yaml
+<<: !include external.yaml
+
+preferences:
+  flash_write_interval: 999min
+
+packages:
+  webui: !include webui.yaml
+  status: !include status.yaml
+  motors: !include motors.yaml
+  sensors: !include sensors.yaml
+  calibration: !include calibration.yaml
+  suncalibration: !include suncalibration.yaml
+
+esphome:
+  name: heliostattest
+  includes: 
+    - calculations.h
+    - ..\tests\asserthelper.h
+    - ..\tests\runtests.h
+
+interval:
+  - interval: 1000d #do only once
+    then:
+      - delay: 15s
+      - lambda: runtests();

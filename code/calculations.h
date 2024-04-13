@@ -1,25 +1,16 @@
 // Copyright 2024
-const int microsteps = 4;              // microsteps configured in the steppercontroller
-const int maxextend = 5000;            // how far to go to search for an endswitch
-const int clearance = microsteps * 4;  // gap between endswitch and endpos
 const int az = 0;
 const int el = 1;
 const int mindistanceaz = 50;          //  minimum distance between measurements in steps
 const int mindistanceel = 20;          //     "
 const int minlightpercentage = 0.92;   // higher values are more accurate
-const float minambient = 2.87;         // 2.87 - 2.92 is a good value higher values are more accurate
+const float minambient = 2.90;         // 2.87 - 2.92 is a good value higher values are more accurate
 const int maxcount = 500;              // Maximum of steps for calibration
-const int stepsperrotation = 40;       // Steps one spiral will take
-const int rotations = 3;
-const int sunsearchdelay = 600;        // Seconds between sunsearch (successful storage & next start)
-
-float to_rad(float deg) {
-    float rad = deg / 180 * PI;
-    return deg / 180 * PI;
-}
-float to_deg(float rad) {
-    return rad * 180 / PI;
-}
+const int stepsperrotation = 50;       // Steps one spiral will take
+const int waves = 3;
+const int sunsearchdelay = 300;        // Seconds between sunsearch (successful storage & next start)
+const int searchextend = 150;
+const float targetstep = 0.5;
 
 void calculateAngles() {
     // Get sun coordinates
@@ -29,7 +20,7 @@ void calculateAngles() {
     //
     // Mirroring to target
     //
-    if (id(measuresun) == true) {
+    if (id(measuresun) == true || id(manualmode) == true) {
         return;
     }
     ESP_LOGI("calculation", "calculating...");
@@ -63,203 +54,37 @@ void calculateAngles() {
     // ESP_LOGI("calculation", "Motoraz: %f",id(motoraz).state);
 }
 
-int setMotor(float motorPos, float min, float max, int limit) {
-    if (motorPos < 0) {
-        motorPos += 360.0f;
-    }
-    motorPos = (motorPos - min) / (max-min) * static_cast<float>(limit);
-    // ESP_LOGI("calculation", "Motor Stepper: %f",motorPos);
-    // ESP_LOGI("calculation", "MinAzimuth Stepper: %f",id(minAzimuth));
-    // ESP_LOGI("calculation", "MaxAzimuth Stepper: %f",id(maxAzimuth));
-    // ESP_LOGI("calculation", "Right Limit: %d",id(west_limit));
-    if (motorPos > 0 && motorPos < limit) {
-        return motorPos;
-    }
-    return -1;
-}
-
-// For debug only
-float angleofaz(int steps) {
-    return static_cast<float>(steps) / id(west_limit) * id(maxAzimuth);
-}
-float angleofel(int steps) {
-    return (static_cast<float>(steps) / id(upper_limit)) * id(maxElevation);
-}
-
-bool capmotorbounds(int &motorsteps, int boundary) {
-    if (motorsteps < 0) {
-        motorsteps = 0;
-        return false;
-    }
-    if (motorsteps > boundary) {
-        motorsteps = boundary;
-        return false;
-    }
-    return true;
-}
-
-float motorToAngle(int motorPos, float min, float max, int motorsteps) {
-    // min, max = angles limt = motorsteps
-    float angle = motorPos / static_cast<float>(motorsteps);
-    angle = (angle * max - min) + min;
-    // ESP_LOGI("calculation", "Motor Stepper: %f",motorPos);
-    if (angle < 0) {
-        angle += 360.0f;
-    }
-        return angle;
-}
-
-void setelevation(int steps) {
-    id(stepper_el).set_target(steps);
-}
-void setazimuth(int steps) {
-    id(stepper_az).set_target(steps);
-}
-int roundToMicrostep(int motorPos) {
-    int motorValue = motorPos;
-    // microsteps;
-    return ( motorValue / microsteps ) * microsteps;
-}
-
-int toMicrostep(int motorPos) {
-    int motorValue = motorPos;
-    // microsteps;
-    return motorValue * microsteps;
-}
-
-void motorcontrol() {
-    if ((id(allValid) == false) || (id(measuresun) == true)) {
-        return;
-    }
-    //
-    // Execution when both values are in range, otherwise do nothing
-    //
-    // When elevation goes downwards, there is some clearance in the gears
-    // Fix this by subtracting a fixed value from the elevation
-    //
-    static float motorel_act;
-    motorel_act = id(motorel).state;
-    float motorel_corr = motorel_act;
-    if (motorel_act < id(motorel_prev)) {
-    // Going down
-        motorel_corr -= 0.9;
-    }
-    // Keep this motorel for the next call when it changed due to call to 'calculatetarget'
-    id(motorel_prev)= id(motorel).state;
-    //
-    //
-    int targetEl = setMotor(motorel_corr,      id(minElevation), id(maxElevation), static_cast<float>(id(upper_limit)));
-    int targetAz = setMotor(id(motoraz).state, id(minAzimuth),   id(maxAzimuth),   static_cast<float>(id(west_limit)));
-    // ESP_LOGI("isnan", "el: %f",motorel_corr);
-    // ESP_LOGI("isnan", "az: %f",id(motoraz).state);
-    // ESP_LOGI("isnan", "tel: %f",targetEl);
-    // ESP_LOGI("isnan", "taz: %f",targetAz);
-    if ((isnan(motorel_corr) == false) && (isnan(id(motoraz).state) == false)) {
-        id(calculated) = true;
-    }
-    if (targetEl == -1 || targetAz == -1) {
-        ESP_LOGI("motor", "out of bounds of motors");
-        return;
-    }
-    targetEl = roundToMicrostep(targetEl);
-    targetAz = roundToMicrostep(targetAz);
-    setelevation(targetEl);
-    setazimuth(targetAz);
-}
-
-int getelevation() {
-    return id(stepper_el).current_position;
-}
-int getazimuth() {
-    return id(stepper_az).current_position;
-}
-
-void reportelevation(int steps) {
-    id(stepper_el).report_position(steps);
-}
-void reportazimuth(int steps) {
-    id(stepper_az).report_position(steps);
-}
-
-void startCalibration() {
-    id(calibrating) = true;
-    setelevation(-maxextend);  // move down to find minimum
-    setazimuth(-maxextend);    // East
-}
-
-void releaseElevation() {
-    reportelevation(0);
-    setelevation(0);
-}
-void releaseAzimuth() {
-    reportazimuth(0);
-    setazimuth(0);
-}
-
-void calibrationDown() {
-    if (id(calibration_down) == true) {
-        // set the endstop to -clearance, then move to 0
-        reportelevation(-clearance);
-        setelevation(0);
-        ESP_LOGI("calibration", "lower limit reset");
-        if (id(calibration_up) == true) {
-            // Go up
-            setelevation(maxextend);
-        }
+void azimuthplus(float angle) {
+    if (id(manualmode) == true) {
+        movemotorazrelative(angle);
     } else {
-        ESP_LOGI("calibration", "Down endstop triggered without calibration. Check cabling");
-        releaseElevation();
-    }
-}
-
-void calibrationUp() {
-    if (id(calibration_up) == true) {
-        // set limit then stop
-        id(upper_limit) = getelevation()-clearance;
-        setelevation(id(upper_limit));
-        ESP_LOGI("calibration", "upper limit set to %d", id(upper_limit));
-    } else {
-        setelevation(getelevation()-clearance);
-        ESP_LOGI("calibration", "Up endstop triggered without calibration. Check cabling");
-    }
-}
-void calibrationEast() {
-    if (id(calibration_east) == true) {
-        // set the endstop to -clearance, then move to 0
-        reportazimuth(-clearance);
-        setazimuth(0);
-        ESP_LOGI("calibration", "east limit reset");
-        if (id(calibration_west) == true) {
-            // Go west
-            setazimuth(maxextend);
-        }
-    } else {
-        ESP_LOGI("calibration", "East endstop triggered without calibration. Check cabling");
-        releaseAzimuth();
-    }
-}
-
-void calibrationWest() {
-    if (id(calibration_west) == true) {
-        // set limit then stop
-        id(west_limit) = getazimuth()-clearance;
-        setazimuth(id(west_limit));
-        ESP_LOGI("calibration", "west limit set to %d", id(west_limit));
-    } else {
-        setazimuth(getazimuth()-clearance);
-        ESP_LOGI("calibration", "West endstop triggered without calibration. Check cabling");
-    }
-}
-
-void finishCalibration(bool &currentid, bool nextid) {
-    //ESP_LOGI("calibration", "%d", nextid);
-    currentid = false;
-    if (nextid == false) {
-        ESP_LOGI("calibration", "finished");
-        // Finished to calibrate
-        id(calibrating) = false;
+        id(targetaz) += targetstep * angle;
+        id(targetazimuth).publish_state(id(targetaz));
         id(updatemirror).execute();
     }
+}
+
+void elevationplus(float angle) {
+    if (id(manualmode) == true) {
+        movemotorelrelative(angle);
+    } else {
+        id(targetel) += targetstep * angle;
+        id(targetelevation).publish_state(id(targetel));
+        id(updatemirror).execute();
+    }
+}
+
+float angleofaz(int steps) {
+    return static_cast<float>(steps) / id(west_limit) * (id(maxAzimuth) - id(minAzimuth));
+}
+float angleofel(int steps) {
+    return (static_cast<float>(steps) / id(upper_limit)) * (id(maxElevation)- id(minElevation));
+}
+float angleofazabs(int steps) {
+    return angleofaz(steps) + id(minAzimuth);
+}
+float angleofelabs(int steps) {
+    return angleofel(steps) + id(minElevation);
 }
 
 void updateStatus() {
@@ -316,17 +141,17 @@ void storeMeasurement(float maxlight, int maxlightaz, int maxlightel, int actual
     id(measurements)[meascount][4] = actualel;
     ESP_LOGI("measure", "store: count: %d light: %d maz: %d, mel: %d, aa: %d, ae: %d ",
                 meascount,
-                id(measurements)[meascount][0],   // Light value
-                id(measurements)[meascount][1],   // measured azimuth
-                id(measurements)[meascount][2],   // measured elevation
-                id(measurements)[meascount][3],   // actual azimuth
-                id(measurements)[meascount][4]);  // actual elevation
-    // In degrees
-    ESP_LOGI("measure", "degrees: maz: %f, mel: %f, aa: %f, ae: %f ",
-                angleofaz(id(measurements)[meascount][1]),
-                angleofaz(id(measurements)[meascount][2]),
-                angleofel(id(measurements)[meascount][3]),
-                angleofel(id(measurements)[meascount][4]));
+                id(measurements)[meascount][0],  // Light value
+                id(measurements)[meascount][1],  // measured azimuth
+                id(measurements)[meascount][2],  // measured elevation
+                id(measurements)[meascount][3],  // actual azimuth
+                id(measurements)[meascount][4]); // actual elevation
+    // // In degrees
+    // ESP_LOGI("measure", "degrees: maz: %f, mel: %f, aa: %f, ae: %f ",
+    //             angleofaz(id(measurements)[meascount][1]),
+    //             angleofaz(id(measurements)[meascount][2]),
+    //             angleofel(id(measurements)[meascount][3]),
+    //             angleofel(id(measurements)[meascount][4]));
 }
 
 int getmeasured(int meascount, int azel) {
@@ -346,39 +171,60 @@ float getscale(int first, int second, int elaz) {
     int measured1 = getmeasured(first, elaz);
     int measured2 = getmeasured(second, elaz);
     // current
-    int current1 = getactual(first, elaz);
-    int current2 = getactual(second, elaz);
+    int actual1 = getactual(first, elaz);
+    int actual2 = getactual(second, elaz);
 
     float measureddiff = static_cast<float>(measured2 - measured1);
-    float currentdiff = static_cast<float>(current2 - current1);
-    float scale = currentdiff / measureddiff;
-    //ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ", scale, measured1, measured2, current1, current2);
+    float actualdiff = static_cast<float>(actual2 - actual1);
+    float scale = measureddiff / actualdiff;
+    //ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ", scale, measured1, measured2, actual1, actual2);
 
-    return currentdiff / measureddiff;
+    return scale;
 }
-float getfrom(int first, int second, int elaz) {
-    // target
-    int measured1 = getmeasured(first, elaz);
-    int measured2 = getmeasured(second, elaz);
-    // current
-    int current1 = getactual(first, elaz);
-    int current2 = getactual(second, elaz);
 
-    float measureddiff = static_cast<float>(measured2 - measured1);
-    float currentdiff = static_cast<float>(current2 - current1);
-    float scale = measured1 - currentdiff / measureddiff;
-    //ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ", scale, measured1, measured2, current1, current2);
-
-    return currentdiff / measureddiff;
-}
 float getoffset(int first, float scale, int elaz) {
     int measured1 = static_cast<float>(getmeasured(first, elaz));
-    int current1 = static_cast<float>(getactual(first, elaz));
+    int actual1 = static_cast<float>(getactual(first, elaz));
 
-    float offset = current1-(measured1*scale);
-    //ESP_LOGI("measure", "offset %f, meas: %f, curr: %f ", offset, measured1, current1);
+    float offset = (float)measured1-((float)actual1*scale);
+    //ESP_LOGI("measure", "offset %f, meas: %d, curr: %d ", offset, measured1, actual1);
 
-    return current1-(measured1*scale);
+    return offset;
+}
+
+int getfrom(int first, int second, int elaz) {
+	float scale = getscale(first,second,elaz);
+    //ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ", scale, measured1, measured2, current1, current2);
+
+//	float offset = getoffset(first,scale,elaz);
+    int measured1 = getmeasured(first, elaz);
+    int actual1 = getactual(first, elaz);
+    //int actual2 = getactual(second, elaz);
+	float from = measured1 - (float)actual1 * scale;
+//    ESP_LOGI("measure", "offset %f",offset);
+
+	return (int)from;
+	// //float degreediff = ( id(maxElevation) - id(minElevation) ) * scale;
+    // ESP_LOGI("measure", "degreediff %f",degreediff);
+
+	// // from = 
+    // return currentdiff / measureddiff;
+}
+int getto(int first, int second, int elaz) {
+	float scale = getscale(first,second,elaz);
+    //ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ", scale, measured1, measured2, current1, current2);
+
+    int measured2 = getmeasured(second, elaz);
+    //int actual1 = getactual(first, elaz);
+    float actual2 = (float)getactual(second, elaz);
+	float to = measured2 + ((float)id(west_limit) - actual2) * scale;
+
+	return (int)to;
+	// //float degreediff = ( id(maxElevation) - id(minElevation) ) * scale;
+    // ESP_LOGI("measure", "degreediff %f",degreediff);
+
+	// // from = 
+    // return currentdiff / measureddiff;
 }
 
 float geterror(int first, int second, int elaz) {
@@ -397,6 +243,8 @@ float geterror(int first, int second, int elaz) {
     //   float xe = tx(xpoints[errorindex]);
       float should = static_cast<float>(getactual(errorindex, elaz)) * scale + offset;
       float difference = abs(should - static_cast<float>(getmeasured(errorindex, elaz)));
+	  //ESP_LOGI("measure","error index %d should %f difference %f scale %f offset %f act %f meas %f",errorindex, should, difference,scale,offset,
+	  //static_cast<float>(getactual(errorindex, elaz)),static_cast<float>(getmeasured(errorindex, elaz)));
       error += difference * difference;
     }
     return error;
@@ -406,7 +254,7 @@ void calculatenewbounds() {
     // for all possible combinations of measurements, calculate the new
     // bounds and the error (deviation) of the others.
     int pointscount = id(measurementscount);
-    if (pointscount < 2) {  // TODO 3
+    if (pointscount < 2) {
         ESP_LOGI("measure", "not enough values %d for calculation ", pointscount);
         return;
     }
@@ -450,12 +298,17 @@ void calculatenewbounds() {
     // Calculate the new values
     ESP_LOGI("measure", "best az %d - %d error: %f", bestfirstaz, bestsecondaz, minerroraz);
     ESP_LOGI("measure", "best el %d - %d error: %f", bestfirstel, bestsecondel, minerrorel);
-    float scale = getscale(bestfirstaz, bestsecondaz, 0);
-    float offset = getoffset(bestfirstaz, scale, 0);
-    ESP_LOGI("measure", "az scale: %f offset: %f offsetdeg %f", scale, offset, angleofaz(static_cast<int>(offset)));
-    scale = getscale(bestfirstel, bestsecondel, 1);
-    offset = getoffset(bestfirstel, scale, 1);
-    ESP_LOGI("measure", "el scale: %f offset: %f offsetdeg %f", scale, offset, angleofel(static_cast<int>(offset)));
+    // float scale = getscale(bestfirstaz, bestsecondaz, 0);
+    // float offset = getoffset(bestfirstaz, scale, 0);
+    // ESP_LOGI("measure", "az scale: %f offset: %f offsetdeg %f", scale, offset, angleofaz(static_cast<int>(offset)));
+    // scale = getscale(bestfirstel, bestsecondel, 1);
+    // offset = getoffset(bestfirstel, scale, 1);
+    // ESP_LOGI("measure", "el scale: %f offset: %f offsetdeg %f", scale, offset, angleofel(static_cast<int>(offset)));
+    float azfrom = angleofazabs(getfrom(bestfirstaz, bestsecondaz, az));
+    float azto   = angleofazabs(getto(bestfirstaz, bestsecondaz, az));
+    float elfrom = angleofazabs(getfrom(bestfirstel, bestsecondel, el));
+    float elto   = angleofazabs(getto(bestfirstel, bestsecondel, el));
+    ESP_LOGI("measure", "azfrom: %f azto: %f elfrom %f, elto: %f", azfrom, azto);
 }
 
 template <typename T> int sgn(T val) {
@@ -496,27 +349,30 @@ void measurethesun() {
     static int lastmaximum;
     static int driftaz;
     static int driftel;
-    if (id(measuresun) == false || (id(allValid) == false)) {
+    if (id(measuresun) == false) {
         return;
     }
 
     time_t currenttime = id(sntp_time).now().timestamp;
-    if (currenttime < (prevtime + sunsearchdelay)) {
+    if (currenttime < (prevtime + sunsearchdelay) || id(allValid) == false) {
         id(targetSun).turn_off();
         return;
     }
-    //ESP_LOGI("measure", "time: %d", currenttime);
     // prevtime is only set when the sunsearch was successful
     // Update the sensors
     id(ambientsun).update();
     float ambientsunlight = id(ambientsun).state;
-    if (istoodark()){return;}
+    if (istoodark()) {return;}
 
     id(directedsun).update();
-    //id(shortdirectedsun).update();
     float directedsunlight = id(directedsun).state;
+    if (directedsunlight < 2) {
+        // Only when the sun is not in reach, otherwise it is too slow
+        id(shortdirectedsun).update();
+    }
 
-    int targetEl = setMotor(SunsAltitude, id(minElevation), id(maxElevation), static_cast<float>(id(upper_limit)));
+    float adjustedel = adjustel(SunsAzimuth, SunsAltitude);
+    int targetEl = setMotor(adjustedel,   id(minElevation), id(maxElevation), static_cast<float>(id(upper_limit)));
     int targetAz = setMotor(SunsAzimuth,  id(minAzimuth),   id(maxAzimuth),   static_cast<float>(id(west_limit)));
     // ESP_LOGI("measure", "sun: %f, %f, %d, %d  ", SunsAltitude, SunsAzimuth, targetEl, targetAz);
 
@@ -553,8 +409,8 @@ void measurethesun() {
     // Goal is to be fast while having a variety of measurements while the drift happens
     // start at PI/2 = sin -1
     // 2PI = 1 full rotation
-    float sincurve = sin((static_cast<float>(count)/static_cast<float>(maxcount) * PI * 2 * rotations)-PI / 2)/2 + 0.5;
-    float extend = sincurve * 100;
+    float sincurve = sin((static_cast<float>(count)/static_cast<float>(maxcount) * PI * 2 * waves)-PI / 2)/2 + 0.5;
+    float extend = sincurve * static_cast<float>(searchextend);
     // Drift
     if (lastmaximum > 31) {
         driftaz += sgn(maxprobeaz - driftaz - targetAz);
@@ -575,7 +431,7 @@ void measurethesun() {
 
     if (count % 10 == 0) {  // Avoid spamming
         ESP_LOGI("measure", "amb: %f dir: %f saz: %d sel: %d driftaz %d driftel: %d maaz: %d taaz: %d",
-          ambientsunlight, directedsunlight, spiralaz, spiralel, driftaz, driftel, targetAz+maxlightaz, targetAz);
+           ambientsunlight, directedsunlight, spiralaz, spiralel, driftaz, driftel, targetAz+maxlightaz, targetAz);
     }
     // Measure
     float lightratio = directedsunlight / ambientsunlight;
@@ -589,7 +445,7 @@ void measurethesun() {
     } else {
         // When no new maximum was not found 1rotation + 50 steps after the last, exit since the best was already found.
         // This shortens the search (and noise) when the values are already good
-        if (count > lastmaximum + (maxcount / rotations) + 50) {
+        if (count > lastmaximum + (maxcount / waves) + 50) {
             ESP_LOGI("measure", "finished sun search successfully early");
             // Store the result
             storeMeasurement(maxlightratio, maxlightaz, maxlightel, targetAz, targetEl);

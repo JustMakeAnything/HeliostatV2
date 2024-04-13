@@ -1,0 +1,30 @@
+globals:
+  
+   - id: manualmode
+     type: bool
+     restore_value: no
+     initial_value: "false"
+
+switch:
+  - platform: template
+    name: "Manual mode"
+    id: manualmodeswitch
+    optimistic: true
+    turn_on_action:
+      - globals.set:
+          id: manualmode
+          value: "true"
+      - lambda: |-
+            ESP_LOGI("measure", "begin of manual mode");
+            id(stepper_el).set_sleep_when_done(false);
+            id(stepper_az).set_sleep_when_done(false);
+            // Initialize manual mode with current values
+    turn_off_action:
+      - globals.set:
+          id: manualmode
+          value: "false"
+      - lambda: |-
+            ESP_LOGI("measure", "end of manual mode");
+            id(updatemirror).execute();
+            id(stepper_el).set_sleep_when_done(true);
+            id(stepper_az).set_sleep_when_done(true);

@@ -15,10 +15,14 @@ packages:
   calibration: !include calibration.yaml
   testfunctions: !include testfunctions.yaml
   suncalibration: !include suncalibration.yaml
+  manualmode: !include manualmode.yaml
 
 esphome:
   name: heliostat
   includes: 
+    - helpers.h
+    - motors.h
+    - calibration.h
     - calculations.h
 
 interval:
