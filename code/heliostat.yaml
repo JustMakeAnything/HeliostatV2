@@ -21,6 +21,7 @@ esphome:
   name: heliostat
   includes: 
     - helpers.h
+    - status.h
     - motors.h
     - calibration.h
     - calculations.h
@@ -31,9 +32,11 @@ interval:
     then:
       script.execute: updatemirror
 
-  # Search for the sun try every 3 minutes to see if sun is available
-  # This has to be longer than the maximum sunsearch (500/4) = 125+x sec
-  - interval: 3min
+  # Search for the sun. 
+  # Try every minute to see if sun is available
+  # The routine will not move when it is not the right time
+  # or too dark
+  - interval: 1min
     then:
       - switch.turn_on: targetSun
  

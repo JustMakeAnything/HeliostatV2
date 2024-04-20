@@ -5,6 +5,10 @@ globals:
     type: boolean
     restore_value: no
     initial_value: "false"
+  - id: tracksun
+    type: boolean
+    restore_value: no
+    initial_value: "false"
   - id: measuresuncount
     type: int
     restore_value: no
@@ -14,20 +18,41 @@ globals:
     type: int
     restore_value: no
     initial_value: "0"
-  # Maximum 20 measurements
+  # Maximum 30 measurements
   - id: measurements
-    type: int[20][5]
+    type: int[30][5]
     restore_value: no
     #initial_value: 
 
 sensor:
   - platform: template
-    name: "sunmeasel"
+    name: "sunmeas elevation"
     id: "sunmeasel"
 
   - platform: template
-    name: "sunmeasaz"
+    name: "sunmeas azimuth"
     id: "sunmeasaz"
+
+  - platform: template
+    name: "adjusted elevation"
+    id: "adjustedElevation"
+
+  - platform: template
+    name: "probed azimuth"
+    id: "probeazimuth"
+
+  - platform: template
+    name: "probed elevation"
+    id: "probeelevation"
+
+  - platform: template
+    name: "drift azimuth"
+    id: "driftazimuth"
+
+  - platform: template
+    name: "drift elevation"
+    id: "driftelevation"
+
 
 switch:
   - platform: template
@@ -35,17 +60,21 @@ switch:
     id: targetSun
     optimistic: true
     turn_on_action:
-      - globals.set:
-          id: measuresun
-          value: "true"
-      - globals.set:
-          id: measuresuncount
-          value: '-40' # Some time to go to start (this value*interval should be abount 10s)
-      - lambda: |-
-            ESP_LOGI("measure", "begin of sunsearch");      
-            id(stepper_el).set_sleep_when_done(false);
-            id(stepper_az).set_sleep_when_done(false);
-
+      - if:
+          condition:
+            lambda: 'return id(measuresun) == false;'
+          then:
+            - globals.set:
+                id: measuresun
+                value: "true"
+            - globals.set:
+                id: measuresuncount
+                value: '-40' # Some time to go to start (this value*interval should be abount 10s)
+            - lambda: |-
+                  id(stepper_el).set_sleep_when_done(false);
+                  id(stepper_az).set_sleep_when_done(false);
+          else:
+            - logger.log: "The sunsearch has not finished. No new search started"
 
     turn_off_action:
       - globals.set:
@@ -53,10 +82,38 @@ switch:
           value: "false"
       - lambda: |-
             // Move mirror to a microstepfree position
-            ESP_LOGI("measure", "end of sunsearch");
             id(updatemirror).execute();
             id(stepper_el).set_sleep_when_done(true);
             id(stepper_az).set_sleep_when_done(true);
+
+  # Continious sun tracking
+  # This does nothing on its own, it just modified the sunsearch 
+  # to be triggered without delay. Furthermore the mirror is never
+  # moved back to the mirroring position
+  - platform: template
+    name: "Track the sun"
+    id: trackSun
+    optimistic: true
+    turn_on_action:
+      - if:
+          condition:
+            lambda: 'return id(tracksun) == false;'
+          then:
+            - globals.set:
+                id: tracksun
+                value: "true"
+            - lambda: |-
+                  ESP_LOGI("measure", "begin of sun tracking");      
+          else:
+            - logger.log: "The suntracking is already active"
+
+    turn_off_action:
+      - globals.set:
+          id: tracksun
+          value: "false"
+      - lambda: |-
+            ESP_LOGI("measure", "end of suntracking");
+
 
 button:
   - platform: template
@@ -66,7 +123,7 @@ button:
       - lambda: calculatenewbounds();
 
 interval:
-  - interval: 250ms
+  - interval: 300ms
     then:
       - lambda: |-
           measurethesun();

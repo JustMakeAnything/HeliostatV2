@@ -30,8 +30,3 @@ globals:
     type: boolean
     restore_value: no
     initial_value: "false"
-
-# interval:
-#   - interval: 20s
-#     then:
-#       - lambda: updateStatus();

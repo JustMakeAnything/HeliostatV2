@@ -69,7 +69,7 @@ float adjustel(float motoraz_act, float motorel_act) {
 }
 
 void motorcontrol() {
-    if ((id(allValid) == false) || (id(measuresun) == true)) {
+    if ((id(allValid) == false) || (id(measuresun) == true) || (id(tracksun) == true)) {
         return;
     }
     //

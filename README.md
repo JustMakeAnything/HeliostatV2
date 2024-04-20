@@ -21,7 +21,7 @@ To your ESP32. See [Esphome](https://esphome.io/) for details. I haven't tested 
 ### Configuration
 
 To connect to your wifi, you need to adapt the secrects.yaml. Wifi is needed to get the exact time. You can also access the web interface at heliostat.local of the given network to set the target during runtime. Otherwise use the constants.yaml to set an initial target.
-
+There is an experimental [autocalibration](./docs/autocalibration.md) available when an additional light sensor is mounted.
 
 ## 3D Print
 
