@@ -22,9 +22,11 @@ esphome:
   includes: 
     - helpers.h
     - status.h
+    - mirror.h
     - motors.h
     - calibration.h
     - calculations.h
+    - webui.h
 
 interval:
   # Update the mirror every 30s
@@ -36,7 +38,7 @@ interval:
   # Try every minute to see if sun is available
   # The routine will not move when it is not the right time
   # or too dark
-  - interval: 1min
+  - interval: 4min
     then:
       - switch.turn_on: targetSun
  

@@ -39,7 +39,7 @@ stepper:
     sleep_pin:
       number: GPIO26
       inverted: true    
-    acceleration: 80 steps/s^2
+    acceleration: 120 steps/s^2
     deceleration: 120 steps/s^2
     sleep_when_done: true
 
@@ -51,12 +51,13 @@ stepper:
     sleep_pin: 
       number: GPIO32
       inverted: true
-    acceleration: 80 steps/s^2
+    acceleration: 120 steps/s^2
     deceleration: 150 steps/s^2
     sleep_when_done: true
 
 
 sensor:
+  # in degrees
   - platform: template
     name: "Motor Elevation"
     id: "motorel"
@@ -65,6 +66,26 @@ sensor:
     name: "Motor Azimuth"
     id: "motoraz"
 
+  # in steps
+  - platform: template
+    name: "Motorazimuth"
+    id: "motorazimuth"
+    update_interval: never
+
+  - platform: template
+    name: "Motorelevation"
+    id: "motorelevation"
+    update_interval: never
+  # in steps manually set
+  - platform: template
+    name: "MotorazimuthManual"
+    id: "motormanualazimuth"
+    update_interval: never
+
+  - platform: template
+    name: "MotorelevationManual"
+    id: "motormanualelevation"
+    update_interval: never
 
 script:
   # Update mirror position

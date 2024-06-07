@@ -62,17 +62,21 @@ switch:
     turn_on_action:
       - if:
           condition:
-            lambda: 'return id(measuresun) == false;'
+            lambda: return id(measuresun) == false;
           then:
-            - globals.set:
-                id: measuresun
-                value: "true"
-            - globals.set:
-                id: measuresuncount
-                value: '-40' # Some time to go to start (this value*interval should be abount 10s)
-            - lambda: |-
-                  id(stepper_el).set_sleep_when_done(false);
-                  id(stepper_az).set_sleep_when_done(false);
+            - if:
+                condition:
+                  lambda: return ismeasurethesunpossible();
+                then:
+                  - globals.set:
+                      id: measuresun
+                      value: "true"
+                  - globals.set:
+                      id: measuresuncount
+                      value: '-40' # Some time to go to start (this value*interval should be abount 10s)
+                  - lambda: |-
+                        id(stepper_el).set_sleep_when_done(false);
+                        id(stepper_az).set_sleep_when_done(false);
           else:
             - logger.log: "The sunsearch has not finished. No new search started"
 
@@ -123,9 +127,19 @@ button:
       - lambda: calculatenewbounds();
 
 interval:
-  - interval: 300ms
+  - interval: 200ms
     then:
-      - lambda: |-
-          measurethesun();
+      - if:
+          condition:
+            lambda: return ismeasurethesunpossible();
+          then:
+            # update is done here to avoid long runtime in lambda
+            # here it is non blocking
+            - component.update : ambientsun
+            - delay: 2ms
+            - component.update : directedsun
+            - delay: 2ms
+            - lambda: |-
+                measurethesun();
 
 # TODO: Check origin calibration every... and log result

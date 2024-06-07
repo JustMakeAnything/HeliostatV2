@@ -30,3 +30,17 @@ globals:
     type: boolean
     restore_value: no
     initial_value: "false"
+
+  # is a manual position set
+  # the counter is set to a value and counts down each time 
+  # the mirror is moved automatically
+  # when the counter reaches 1, the value is stored
+  # Example:
+  # Manual sets to 3
+  # 1st automatic move: 2: Nothing happens
+  # 2nd automatic move: 1: Values stored
+  # 3rd and following:  0: Nothing happens
+  - id: updatemanual
+    type: byte
+    restore_value: no
+    initial_value: "0"

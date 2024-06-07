@@ -5,14 +5,14 @@ substitutions:
   # MinElevation: "5"    #Where are the endstops
   # MaxElevation: "85.0"  #upper
   #gekippt
-  MinElevation: "5"    #Where are the endstops  1696 steps
-  MaxElevation: "85.0"  #upper
+  MinElevation: "7.0"    #Where are the endstops  1696 steps
+  MaxElevation: "86.0"  #upper
   # Markiert eben
   # MinAzimuth: "93.0"     #Eastern
   # MaxAzimuth: "273.7"    #Western
   #gekippt
-  MinAzimuth: "113.0"    #Eastern  127 / 125  diff: 184 / 188  3848
-  MaxAzimuth: "293.0"    #Western  311 / 313 
+  MinAzimuth: "125.0"  #"120.0"    #Eastern  127 / 125  diff: 184 / 188  3848 war: 113.0
+  MaxAzimuth: "284.0"  #282 #"285.0"    #Western  311 / 313                        war: 293.0
   #targetStep: "0.5"      #Step for manual target adjustment
 
 ## NEW

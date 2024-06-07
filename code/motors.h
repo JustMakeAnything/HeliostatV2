@@ -117,6 +117,18 @@ void motorcontrol() {
     targetAz = roundToMicrostep(targetAz);
     setelevation(targetEl);
     setazimuth(targetAz);
+    id(motorelevation).publish_state(targetEl);
+    id(motorazimuth).publish_state(targetAz);
+
+    byte upman = id(updatemanual);
+    //ESP_LOGI("motor", "manual: %d", upman);
+    if (upman == 1) {
+        id(motormanualelevation).publish_state(targetEl);
+        id(motormanualazimuth).publish_state(targetAz);
+    }
+    if (upman > 0) {
+        id(updatemanual) = id(updatemanual) - 1;
+    }
 }
 
 int getelevation() {

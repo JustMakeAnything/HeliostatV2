@@ -4,87 +4,18 @@ const int az = 0;                        // alias for azimuth
 const int el = 1;                        // alias for elevation
 const int mindistanceaz = 50;            //  minimum distance between measurements in steps
 const int mindistanceel = 30;            //     "
-const float minlightpercentage = 0.94;   // higher values are more accurate
+const float minlightpercentage = 0.92;   // higher values are more accurate
 const float minambient = 2.90;           // 2.87 - 2.92 is a good value higher values are more accurate
 // const float minlightpercentage = 0.85;   // higher values are more accurate
 // const float minambient = 2.70;        // 2.87 - 2.92 is a good value higher values are more accurate
 const int maxcount = 600;                // Maximum of steps for calibration (3/s) = max 200 sec
 const int stepsperrotation = 50;         // Steps one spiral will take
 const int waves = 4;                     // 'Waves' are phases of large and minor extend of the search spiral
-const int sunsearchdelay = 1800;         // Seconds between sunsearch (successful storage & next start)
-const int searchextend = 150;            // Extrasteps when the target was not found. The range is then extended
-const float targetstep = 0.5;            // how much the target is moved when clicked in the webserver
+//  const int sunsearchdelay = 1800;         // Seconds between sunsearch (successful storage & next start)
+const int sunsearchdelay = 99999;        // Magic number to avoid sunsearch
+// const int sunsearchdelay = 600;          // Seconds between sunsearch (successful storage & next start)
+const int searchextend = 200;            // The searchrange in steps. 1/4 is added (0.25-1.25)
 
-void calculateAngles() {
-    // Calculate the angle of the mirrot for given sun angles
-    // and target angles
-    // This is called in the updatemirror script.
-    // Afterwards the status is calculated and the motors updated
-
-    // Get sun coordinates
-    float SunsAltitude = id(elevation).state;
-    float SunsAzimuth = id(azimuth).state;
-    // ESP_LOGI("alt", "%f",id(elevation).state);
-    //
-    // Mirroring to target
-    //
-    if (!normalmode()) {
-        return;
-    }
-    // if (id(measuresun) == true || id(manualmode) == true) {
-    // }
-    // ESP_LOGI("calculation", "calculating...");
-    float cx, cy, cz, z1, z2, x1, x2, y1, y2, hyp, dist;
-    z1 = sin(to_rad(SunsAltitude));
-    hyp = cos(to_rad(SunsAltitude));
-    x1 = hyp*cos(to_rad(SunsAzimuth*-1));
-    y1 = hyp*sin(to_rad(SunsAzimuth*-1));
-
-    z2 = sin(to_rad(id(targetel)));
-    hyp = cos(to_rad(id(targetel)));
-    x2 = hyp*cos(to_rad(id(targetaz)*-1));
-    y2 = hyp*sin(to_rad(id(targetaz)*-1));
-
-    cx = (x1-x2) / 2 + x2;
-    cy = (y1-y2) / 2 + y2;
-    cz = (z1-z2) / 2 + z2;
-
-    dist = sqrt(cx*cx+cy*cy+cz*cz);
-    if ((dist > -0.0001) && (dist < 0.0001)) {
-        dist = 0.0001;
-    }
-    id(motorel).state = to_deg(asin(cz/dist));
-    id(motoraz).state = to_deg(atan2(cy*-1, cx));
-    if (id(motoraz).state < 0) {
-        id(motoraz).state = id(motoraz).state + 360;
-    }
-    // ESP_LOGI("calculation", "Targetel: %f",id(targetel));
-    // ESP_LOGI("calculation", "Targetaz: %f",id(targetaz));
-    // ESP_LOGI("calculation", "Motorel: %f",id(motorel).state);
-    // ESP_LOGI("calculation", "Motoraz: %f",id(motoraz).state);
-}
-
-void azimuthplus(float angle) {
-    // Button on webui. React according to mode
-    if (id(manualmode) == true) {
-        movemotorazrelative(angle);
-    } else {
-        id(targetaz) += targetstep * angle;
-        id(targetazimuth).publish_state(id(targetaz));
-        id(updatemirror).execute();
-    }
-}
-
-void elevationplus(float angle) {
-    // Button on webui. React according to mode
-    if (id(manualmode) == true) {
-        movemotorelrelative(angle);
-    } else {
-        id(targetel) += targetstep * angle;
-        id(targetelevation).publish_state(id(targetel));
-        id(updatemirror).execute();
-    }
-}
 
 float angleofaz(int steps) {
     // Convert azimuthsteps in angle
@@ -135,11 +66,11 @@ void storeMeasurement(float maxlight, int maxlightaz, int maxlightel, int actual
     id(measurements)[meascount][4] = actualel;
     ESP_LOGI("measure", "store: count: %d light: %d maz: %d, mel: %d, aa: %d, ae: %d ",
                 meascount,
-                id(measurements)[meascount][0],  // Light value
-                id(measurements)[meascount][1],  // measured azimuth
-                id(measurements)[meascount][2],  // measured elevation
-                id(measurements)[meascount][3],  // actual azimuth
-                id(measurements)[meascount][4]); // actual elevation
+                id(measurements)[meascount][0],   // Light value
+                id(measurements)[meascount][1],   // measured azimuth
+                id(measurements)[meascount][2],   // measured elevation
+                id(measurements)[meascount][3],   // actual azimuth
+                id(measurements)[meascount][4]);  // actual elevation
     // // In degrees
     // ESP_LOGI("measure", "degrees: maz: %f, mel: %f, aa: %f, ae: %f ",
     //             angleofaz(id(measurements)[meascount][1]),
@@ -192,36 +123,36 @@ float getoffset(int first, float scale, int elaz) {
 
 int getfrom(int first, int second, int elaz) {
     // Which angle should be the from value ( step = 0 )
-	float scale = getscale(first,second,elaz);
-    //ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ", scale, measured1, measured2, current1, current2);
+    float scale = getscale(first, second, elaz);
+    // ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ",
+    //  scale, measured1, measured2, current1, current2);
     int measured1 = getmeasured(first, elaz);
     int actual1 = getactual(first, elaz);
-	float from = measured1 - (float)actual1 * scale;
+    float from = measured1 - static_cast<float>(actual1) * scale;
 //    ESP_LOGI("measure", "offset %f",offset);
 
-	return (int)from;
-	// //float degreediff = ( id(maxElevation) - id(minElevation) ) * scale;
+    return static_cast<int>(from);
+    // float degreediff = ( id(maxElevation) - id(minElevation) ) * scale;
     // ESP_LOGI("measure", "degreediff %f",degreediff);
 }
 int getto(int first, int second, int elaz) {
     // Which angle should be the to value ( step = calibrated maxsteps )
-	float scale = getscale(first,second,elaz);
-    //ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ", scale, measured1, measured2, current1, current2);
+    float scale = getscale(first, second, elaz);
+    // ESP_LOGI("measure", "scale %f, m1: %d, m2: %d, c1: %d, c2: %d ",
+    // scale, measured1, measured2, current1, current2);
 
     int measured2 = getmeasured(second, elaz);
     float actual2 = static_cast<float>(getactual(second, elaz));
-	float to = measured2 + (static_cast<float>(id(west_limit)) - actual2) * scale;
+    float to = measured2 + (static_cast<float>(id(west_limit)) - actual2) * scale;
 
-	return static_cast<int>(to);
-	// //float degreediff = ( id(maxElevation) - id(minElevation) ) * scale;
+    return static_cast<int>(to);
+    // //float degreediff = ( id(maxElevation) - id(minElevation) ) * scale;
     // ESP_LOGI("measure", "degreediff %f",degreediff);
-
-	// // from = 
     // return currentdiff / measureddiff;
 }
 
 float geterror(int first, int second, int elaz) {
-    // Calculate the exponential deviation of all points which are not the 
+    // Calculate the exponential deviation of all points which are not the
     // points determining the line (fist, second) and add them up
     // this shows how well the line fits to the given points
     float error = 0;
@@ -235,13 +166,14 @@ float geterror(int first, int second, int elaz) {
       if (errorindex == first || errorindex == second) {
         // Not the current line (error always 0)
         continue;
-      }
-    //   float xe = tx(xpoints[errorindex]);
-      float should = static_cast<float>(getactual(errorindex, elaz)) * scale + offset;
-      float difference = abs(should - static_cast<float>(getmeasured(errorindex, elaz)));
-	  //ESP_LOGI("measure","error index %d should %f difference %f scale %f offset %f act %f meas %f",errorindex, should, difference,scale,offset,
-	  //static_cast<float>(getactual(errorindex, elaz)),static_cast<float>(getmeasured(errorindex, elaz)));
-      error += difference * difference;
+        }
+        //   float xe = tx(xpoints[errorindex]);
+        float should = static_cast<float>(getactual(errorindex, elaz)) * scale + offset;
+        float difference = abs(should - static_cast<float>(getmeasured(errorindex, elaz)));
+        // ESP_LOGI("measure","error index %d should %f difference %f scale %f offset %f act %f meas %f",
+        // errorindex, should, difference,scale,offset,
+        // static_cast<float>(getactual(errorindex, elaz)),static_cast<float>(getmeasured(errorindex, elaz)));
+        error += difference * difference;
     }
     return error;
 }
@@ -311,8 +243,8 @@ template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
-bool istoodark() {
-    if (id(ambientsun).state < minambient) {
+bool istoodark(float value) {
+    if (value < minambient) {
         // Too dark for a good measurement
         ESP_LOGI("measure", "too dark for sun calibration %f", id(ambientsun).state);
         abortmeasuresun();
@@ -330,6 +262,47 @@ void endsunsearch() {
         }
 }
 
+static time_t prevtime = 0;
+
+bool ismeasurethesunpossible() {
+    if (id(allValid) == false) {
+        // Heliostat is not ready yet
+        return false;
+    }
+    if (id(ambientsun).state < minambient) {
+        // Too dark
+        return false;
+    }
+    // Is it possible to move the mirror to the sun?
+    // Since values may be wrong, we add some space to search
+    // ESP_LOGI("measure", "min: %f, max %f, azimuth %f", id(minAzimuth), id(maxAzimuth), id(azimuth).state);
+    if ((id(minAzimuth)+3.0 > id(azimuth).state)
+     || (id(maxAzimuth)-3.0 < id(azimuth).state)) {
+        return false;
+    }
+    time_t currenttime = id(sntp_time).now().timestamp;
+    // Make sure a measurement is only done when the desired time has passed
+    // The time is only set when a measurement was successful. When it was
+    // aborted, it is immediately started again as soon as conditions fit.
+    // This makes it possible to wait for the sun on a cloudy day
+    if (id(tracksun) == true) {
+        // Ignore time. Continious tracking without the need of a delay
+    } else {
+        // Dont do sunsearch with this magic number
+        if (sunsearchdelay == 99999) {
+            return false;
+        }
+        if (currenttime < (prevtime + sunsearchdelay)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void measurethesunwasscucessful() {
+    prevtime = id(sntp_time).now().timestamp;
+}
+
 void measurethesun() {
     // This is the routine which is called every few milliseconds (see suncalibration.yaml interval)
     // Perofmance is a problem. It takes sometimes too long
@@ -338,7 +311,7 @@ void measurethesun() {
         // Do not do anything
         return;
     }
-    static time_t prevtime = 0;
+    // static time_t prevtime = 0;
     static float maxlightratio;
     static int maxlightaz;
     static int maxlightel;
@@ -353,33 +326,39 @@ void measurethesun() {
     static int prevprobeel;
     static int prevspiralaz;
     static int prevspiralel;
-    if (id(allValid) == false) {
-        // Heliostat is not ready yet
+    // if (id(allValid) == false) {
+    //     // Heliostat is not ready yet
+    //     id(targetSun).turn_off();
+    //     return;
+    // }
+
+    // time_t currenttime = id(sntp_time).now().timestamp;
+    // // Make sure a measurement is only done when the desired time has passed
+    // // The time is only set when a measurement was successful. When it was
+    // // aborted, it is immediately started again as soon as conditions fit.
+    // // This makes it possible to wait for the sun on a cloudy day
+    // if (id(tracksun) == true) {
+    //     // Ignore time. Continious tracking without the need of a delay
+    // } else {
+    //     if (currenttime < (prevtime + sunsearchdelay)) {
+    //         id(targetSun).turn_off();
+    //         return;
+    //     }
+    // }
+    // prevtime is only set when the sunsearch was successful
+    if (!ismeasurethesunpossible()) {
         id(targetSun).turn_off();
         return;
     }
-
-    time_t currenttime = id(sntp_time).now().timestamp;
-    // Make sure a measurement is only done when the desired time has passed
-    // The time is only set when a measurement was successful. When it was
-    // aborted, it is immediately started again as soon as conditions fit.
-    // This makes it possible to wait for the sun on a cloudy day
-    if (id(tracksun) == true) {
-        // Ignore time. Continious tracking without the need of a delay
-    } else {
-        if (currenttime < (prevtime + sunsearchdelay)) {
-            id(targetSun).turn_off();
-            return;
-        }
-    }
-    // prevtime is only set when the sunsearch was successful
     // Update the sensors
-    id(ambientsun).update();
+    // id(ambientsun).update();
     float ambientsunlight = id(ambientsun).state;
-    if (istoodark()) {return;}
+    if (istoodark(ambientsunlight)) {return;}
 
-    id(directedsun).update();
+    // id(directedsun).update();
     float directedsunlight = id(directedsun).state;
+
+    // Currently the short sensor is just for logging
     if (directedsunlight < 2) {
         // Only when the sun is not in reach, otherwise it is too slow
         id(shortdirectedsun).update();
@@ -433,10 +412,11 @@ void measurethesun() {
         // after the last, exit since the best was already found.
         // This shortens the search (and noise) when the values are already good
         if ((count > lastmaximum + (maxcount / waves) + stepsperrotation) && (maxlightratio >= minlightpercentage)) {
-            ESP_LOGI("measure", "finished sun search successfully early");
+            ESP_LOGI("measure", "finished sun search successfully early at step %d", count);
             // Store the result
             storeMeasurement(maxlightratio, maxlightaz, maxlightel, targetAz, targetEl);
-            prevtime = currenttime;
+            measurethesunwasscucessful();
+            // prevtime = currenttime;
             prevdriftaz = driftaz;
             prevdriftel = driftel;
             endsunsearch();
@@ -450,7 +430,8 @@ void measurethesun() {
         if (maxlightratio >= minlightpercentage) {
             storeMeasurement(maxlightratio, maxlightaz, maxlightel, targetAz, targetEl);
             ESP_LOGI("measure", "finished sun search successfully ");
-            prevtime = currenttime;
+            measurethesunwasscucessful();
+            // prevtime = currenttime;
             prevdriftaz = driftaz;
             prevdriftel = driftel;
         } else {
@@ -473,8 +454,8 @@ void measurethesun() {
     float sincurve = sin((relativeposition * PI * 2.0f * waves) - (PI / 2.0f))
                         / 2.05f + 0.5f;  // /2.05 = +/-0.48 + 0.5 = +/-0.012 * 150 = 1.83 minimum extend
         // extend starts and searchextend and goes up to the double an end
-    extend = sincurve * (static_cast<float>(searchextend) * relativeposition)
-            + static_cast<float>(searchextend);
+    extend = sincurve * ((static_cast<float>(searchextend) * relativeposition)
+            + static_cast<float>(searchextend/4));
     // ESP_LOGI("measure", "angle: %f sincurve: %f extend %f maxpr: %d targ: %d "
     // ,angle, sincurve, extend, maxprobeaz, targetAz );
 
@@ -501,13 +482,197 @@ void measurethesun() {
 
     if (count % 10 == 0) {
         // Avoid spamming, but in trackingmode more info should be sent
-        if (id(tracksun) == true) {
+//        if (id(tracksun) == true) {
             id(driftazimuth).publish_state(driftaz);
             id(driftelevation).publish_state(driftel);
             id(probeazimuth).publish_state(targetAz);
             id(probeelevation).publish_state(targetEl);
-        }
+//        }
         ESP_LOGI("measure", "amb: %f dir: %f saz: %d sel: %d driftaz %d driftel: %d maaz: %d taaz: %d",
            ambientsunlight, directedsunlight, spiralaz, spiralel, driftaz, driftel, targetAz+maxlightaz, targetAz);
+    }
+}
+
+void measurethesunfourway() {
+    // This is the routine which is called every few milliseconds (see suncalibration.yaml interval)
+    if (id(measuresun) == false) {
+        // Do not do anything
+        return;
+    }
+    // static time_t prevtime = 0;
+    static float maxlightratio;
+    static int maxlightaz;
+    static int maxlightel;
+    static int maxprobeaz;
+    static int maxprobeel;
+    static int lastmaximum;
+    static int driftaz;
+    static int driftel;
+    static int prevdriftaz;
+    static int prevdriftel;
+    static int prevprobeaz;
+    static int prevprobeel;
+    static int prevspiralaz;
+    static int prevspiralel;
+    static float driftaverageaz;
+    static float driftaverageel;
+ 
+    // prevtime is only set when the sunsearch was successful
+    if (!ismeasurethesunpossible()) {
+        id(targetSun).turn_off();
+        return;
+    }
+    // Update the sensors
+    // id(ambientsun).update();
+    float directions[4];
+    directions[0] = id(shortdirectedsun).state;
+    directions[1] = id(ambientsun).state;
+    directions[2] = id(directedsun).state;
+    directions[3] = id(othersun).state;
+    float lo = directions[0];
+    float ro = directions[1];
+    float lu = directions[2];
+    float ru = directions[3];
+    float ambientsunlight = id(ambientsun).state;
+    float maxdirections = 0;
+    for (int i = 0; i < 4; i++) {
+        if (directions[i] > maxdirections) {
+            maxdirections = directions[i];
+        }
+    }
+    if (istoodark(maxdirections)) { return; }
+
+    float SunsAltitude = id(elevation).state;
+    float SunsAzimuth = id(azimuth).state;
+    // Adjust elevation for tilted mounting
+    float adjustedel = adjustel(SunsAzimuth, SunsAltitude);
+    id(adjustedElevation).publish_state(adjustedel);
+    int targetEl = setMotor(adjustedel,   id(minElevation), id(maxElevation), static_cast<float>(id(upper_limit)));
+    int targetAz = setMotor(SunsAzimuth,  id(minAzimuth),   id(maxAzimuth),   static_cast<float>(id(west_limit)));
+    // ESP_LOGI("measure", "sun: %f, %f, %d, %d  ", SunsAltitude, SunsAzimuth, targetEl, targetAz);
+
+    // count has the following phases:
+    // negative: let the motors time to move to the sun search position (do nothing else)
+    // 0       : initialize the sun search
+    // >=0     : search the sun
+    int count = id(measuresuncount);
+    id(measuresuncount)++;
+    if (count < 0) {
+        setelevation(targetEl);
+        setazimuth(targetAz);
+        return;  // Do nothing, so the steppers can go to the start position
+    }
+    if (count == 0) {
+        // reset current maxvalues
+        ESP_LOGI("measure", "begin of sunsearch");
+        maxlightratio = 0;
+        lastmaximum = 0;
+        maxlightaz = 0;
+        maxlightel = 0;
+        maxprobeaz = 0;
+        maxprobeel = 0;
+        driftaverageaz = prevdriftaz + 10;
+        driftaverageel = prevdriftel + 10;
+        // driftaz/el is static and will be taken over from last result
+    }
+
+    // // Check the values and memorize a possible maximum.
+    // // The motor is moved afterwards to be in place for the next cycle
+    // float lightratio = directedsunlight / ambientsunlight;
+    // if (lightratio > maxlightratio) {
+    //     // A new maximum was found
+    //     maxlightratio = lightratio;
+    //     maxlightaz = prevspiralaz + driftaz;
+    //     maxlightel = prevspiralel + driftel;
+    //     maxprobeaz = prevprobeaz;
+    //     maxprobeel = prevprobeel;
+    //     lastmaximum = count;
+    // } else {
+    //     // When no new maximum was not found 1wave + 1rotation steps
+    //     // after the last, exit since the best was already found.
+    //     // This shortens the search (and noise) when the values are already good
+    //     if ((count > lastmaximum + (maxcount / waves) + stepsperrotation) && (maxlightratio >= minlightpercentage)) {
+    //         ESP_LOGI("measure", "finished sun search successfully early at step %d", count);
+    //         // Store the result
+    //         storeMeasurement(maxlightratio, maxlightaz, maxlightel, targetAz, targetEl);
+    //         measurethesunwasscucessful();
+    //         // prevtime = currenttime;
+    //         prevdriftaz = driftaz;
+    //         prevdriftel = driftel;
+    //         endsunsearch();
+    //         return;
+    //    }
+    // }
+
+
+    // TODO: Sequence is strange
+    if (count > maxcount) {
+        // Store the result
+        // Usually the search ends early below (not here)
+        if (maxlightratio >= minlightpercentage) {
+            storeMeasurement(maxlightratio, maxlightaz, maxlightel, targetAz, targetEl);
+            ESP_LOGI("measure", "finished sun search successfully ");
+            measurethesunwasscucessful();
+            // prevtime = currenttime;
+            prevdriftaz = driftaz;
+            prevdriftel = driftel;
+        } else {
+            ESP_LOGI("measure", "the sun was not found in the given steps ratio: %f", maxlightratio);
+            // intensity was not high enough. Revert to previous drift values
+            driftaz = prevdriftaz;
+            driftel = prevdriftel;
+        }
+        endsunsearch();
+        return;
+    }
+    int spiralaz = 0;
+    int spiralel = 0;
+
+    // Drift as soon as a maximum was found and one rotation is finished
+    // find out which direction to go
+    //  0 | 1
+    //  --+--
+    //  2 | 3
+    if ( lo + ro > lu + ru ) {
+        driftel++;
+    }
+    if ( lo + ro < lu + ru ) {
+        driftel--;
+    }
+    if ( lo + lu > ro + ru ) {
+        driftaz++;
+    }
+    if ( lo + lu < ro + ru ) {
+        driftaz--;
+    }
+    driftaverageaz = ((driftaverageaz * 9.0) + static_cast<float>(driftaz)) / 10.0f;
+    driftaverageel = ((driftaverageel * 9.0) + static_cast<float>(driftel)) / 10.0f;
+    if (abs(driftaverageaz - static_cast<float>(driftaz)) < 1.0f &&
+        abs(driftaverageel - static_cast<float>(driftel)) < 1.0f ) {
+            // Found the target
+    }
+    // All together (sun pos) + spiral + drift
+    int probeaz = targetAz + spiralaz + driftaz;
+    int probeel = targetEl + spiralel + driftel;
+    // is out of bounds is a reason to abort? Currently not implemented
+    capmotorbounds(probeaz, id(west_limit));
+    capmotorbounds(probeel, id(upper_limit));
+    setazimuth(probeaz);
+    setelevation(probeel);
+    prevspiralaz = spiralaz;
+    prevspiralel = spiralel;
+    prevprobeaz = probeaz;
+    prevprobeel = probeel;
+
+    if (count % 10 == 0) {
+        // Avoid spamming, but in trackingmode more info should be sent
+//        if (id(tracksun) == true) {
+            id(driftazimuth).publish_state(driftaz);
+            id(driftelevation).publish_state(driftel);
+            id(probeazimuth).publish_state(targetAz);
+            id(probeelevation).publish_state(targetEl);
+//        }
+        // ESP_LOGI("measure", "amb: %f dir: %f saz: %d sel: %d driftaz %d driftel: %d maaz: %d taaz: %d",
+        //    ambientsunlight, directedsunlight, spiralaz, spiralel, driftaz, driftel, targetAz+maxlightaz, targetAz);
     }
 }
