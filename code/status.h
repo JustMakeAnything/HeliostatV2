@@ -35,5 +35,5 @@ void updateStatus() {
 }
 
 bool normalmode() {
-    return id(measuresun) == false && id(manualmode) == false && id(tracksun) == false;
+    return id(manualmode) == false;
 }

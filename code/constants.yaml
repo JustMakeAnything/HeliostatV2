@@ -11,13 +11,36 @@ substitutions:
   # MinAzimuth: "93.0"     #Eastern
   # MaxAzimuth: "273.7"    #Western
   #gekippt
-  MinAzimuth: "125.0"  #"120.0"    #Eastern  127 / 125  diff: 184 / 188  3848 war: 113.0
-  MaxAzimuth: "284.0"  #282 #"285.0"    #Western  311 / 313                        war: 293.0
+  # bis 3.8.2024: Zu weit links und rechts. 
+  #               Morgens uns abends zu weit oben. Mitte passt
+  #               Az: Min: 125.0 Max: 284.0
+  #               El: Min:   7.0 Max: 86.0
+  #               tiltmiddle: 208, tiltAngle 17.0
+  # ab  3.8.2024: ----Zu weit links und (rechts).
+  #               ----Morgens uns abends zu weit oben
+  #               Az: Min: 124.0 Max: 284.0
+  #               El: Min:   7.0 Max: 86.0
+  #               tiltmiddle: 208, tiltAngle 15.0
+  # ab 15.8.2024: ----Zu weit links
+  #               ----Morgens uns abends zu weit oben
+  #               Az: Min: 124.5 Max: 284.0
+  #               El: Min:   7.0 Max: 86.0
+  #               tiltmiddle: 208, tiltAngle 14.0
+  # ???
+  #               Az: Min: 123.8 Max: 284.7
+  #               El: Min:   7.0 Max: 86.0
+  # ab 22.9.2024: ----Morgens zu weit links, Abends zu weit rechts
+  #               ----
+  #               Az: Min: 122.5 Max: 285.7
+  #               El: Min:   7.0 Max: 86.0
+  #               tiltmiddle: 208, tiltAngle 14.0
+  MinAzimuth: "122.5"  
+  MaxAzimuth: "285.7"  
   #targetStep: "0.5"      #Step for manual target adjustment
 
 ## NEW
-  tiltMiddle: "201.0"
-  tiltAngle:   "17.0"
+  tiltMiddle: "208" #"201.0"
+  tiltAngle:   "14.5"
   # kippwinkel azimuth   (202)
   # kippwinkel elevation (17) 
 

@@ -2,18 +2,6 @@ sun:
   latitude: ${Latitude}
   longitude: ${Longitude}
 
-#experimental, currently not used:
-i2c:
-  sda: 21
-  scl: 22
-  scan: true
-  id: bus_a
-
-ads1115:
-  - address: 0x48
-    continuous_mode: true
-
-
 sensor:
   - platform: sun
     name: "Sun Elevation"
@@ -26,32 +14,3 @@ sensor:
     id: "azimuth"
     type: azimuth
     update_interval: 15s
-
-  - platform: ads1115
-    update_interval: 5min
-    multiplexer: 'A0_GND'
-    gain: 4.096
-    id: "shortdirectedsun" #slight direct sun
-    name: "ShortDS"
-    
-  - platform: ads1115
-    update_interval: 1min
-    multiplexer: 'A1_GND'
-    gain: 4.096
-    id: "ambientsun"
-    name: "AS"
-
-  - platform: ads1115
-    update_interval: 3min
-    multiplexer: 'A2_GND'
-    gain: 4.096
-    id: "directedsun"
-    name: "DS"
-
-  - platform: ads1115
-    update_interval: never
-    multiplexer: 'A3_GND'
-    gain: 4.096
-    id: "othersun"
-    name: "DS"
-

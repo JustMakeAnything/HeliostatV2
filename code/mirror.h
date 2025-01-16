@@ -16,8 +16,6 @@ void calculateAngles() {
     if (!normalmode()) {
         return;
     }
-    // if (id(measuresun) == true || id(manualmode) == true) {
-    // }
     // ESP_LOGI("calculation", "calculating...");
     float cx, cy, cz, z1, z2, x1, x2, y1, y2, hyp, dist;
     z1 = sin(to_rad(SunsAltitude));

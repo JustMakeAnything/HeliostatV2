@@ -13,8 +13,8 @@ packages:
   motors: !include motors.yaml
   sensors: !include sensors.yaml
   calibration: !include calibration.yaml
-  testfunctions: !include testfunctions.yaml
-  suncalibration: !include suncalibration.yaml
+  #testfunctions: !include testfunctions.yaml
+  #suncalibration: !include suncalibration.yaml
   manualmode: !include manualmode.yaml
 
 esphome:
@@ -34,14 +34,6 @@ interval:
     then:
       script.execute: updatemirror
 
-  # Search for the sun. 
-  # Try every minute to see if sun is available
-  # The routine will not move when it is not the right time
-  # or too dark
-  - interval: 4min
-    then:
-      - switch.turn_on: targetSun
- 
   # find origin on startup
   # todo: find also a way to do complete calibration (maybe after some days?)
   - interval: 1000d #do only once

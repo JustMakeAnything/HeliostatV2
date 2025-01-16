@@ -13,15 +13,6 @@ globals:
     # 90 = zenith
     initial_value: ${TargetElevation}
 
-  # - id: manualaz
-  #   type: float
-  #   restore_value: no
-  #   initial_value: 0
-  # - id: manualel
-  #   type: float
-  #   restore_value: no
-  #   initial_value: 0
-
 # Show the target angles in the webserver
 sensor:
   - platform: template
