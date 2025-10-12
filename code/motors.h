@@ -69,9 +69,10 @@ float adjustel(float motoraz_act, float motorel_act) {
 }
 
 void motorcontrol() {
-    if ((id(allValid) == false) ) {
+    if ( (id(allValid) == false) ) {
         return;
     }
+    // ESP_LOGI("motor", "valid");
     //
     // Execution when both values are in range, otherwise do nothing
     //

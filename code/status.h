@@ -10,12 +10,13 @@ void updateStatus() {
         (id(sntp_time).now().is_valid()) &&
         (id(aboveHorizon) == true) &&
         (id(calibrating) == false)) {
+        // ESP_LOGI("status ", "valid");
         //
         id(allValid) = true;
     } else {
         static int messagesupress;
         messagesupress++;
-        if (messagesupress%10 != 0) {
+        if (messagesupress%5 != 0) {
             return;
         }
         id(allValid) = false;

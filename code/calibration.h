@@ -73,8 +73,9 @@ void calibrationWest() {
     }
 }
 
-void finishCalibration(bool &currentid, bool nextid) {
-    //ESP_LOGI("calibration", "%d", nextid);
+void finishCalibration(bool currentid, bool &nextid) {
+    // ESP_LOGI("calibration", "c %d", currentid);
+    // ESP_LOGI("calibration", "n %d", nextid);
     currentid = false;
     if (nextid == false) {
         ESP_LOGI("calibration", "finished");
