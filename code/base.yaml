@@ -3,6 +3,7 @@ esp32:
   framework:
     type: arduino
 
+
 time:
   - platform: sntp
     id: sntp_time
@@ -68,3 +69,7 @@ mqtt:
   id: "mq"
 
 captive_portal:
+
+switch:
+  - platform: restart
+    name: "Reboot heliostat"

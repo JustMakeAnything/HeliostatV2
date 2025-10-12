@@ -27,6 +27,11 @@ esphome:
     - calibration.h
     - calculations.h
     - webui.h
+  on_boot:
+  # find origin on startup
+  # todo: find also a way to do complete calibration (maybe after some days?)
+    - delay: 5s
+    - button.press: triggerorigin
 
 interval:
   # Update the mirror every 30s
@@ -34,10 +39,11 @@ interval:
     then:
       script.execute: updatemirror
 
-  # find origin on startup
-  # todo: find also a way to do complete calibration (maybe after some days?)
-  - interval: 1000d #do only once
-    then:
-      - delay: 15s
-#      - button.press: triggercalibration
-      - button.press: triggerorigin
+#   # find origin on startup
+#   # todo: find also a way to do complete calibration (maybe after some days?)
+#   - interval: 1000d #do only once
+#     then:
+#       - delay: 15s
+# #      - button.press: triggercalibration
+#       - button.press: triggerorigin
+     
